@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/database.dart';
+import '../data/food_seed.dart';
 import '../providers.dart';
 import 'diary_screen.dart';
 import 'food_form_screen.dart';
@@ -15,22 +16,26 @@ class FoodSearchScreen extends ConsumerStatefulWidget {
 
 class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   late Future<List<Food>> _results;
+  String _query = '';
 
   @override
   void initState() {
     super.initState();
-    _search('');
+    _results = ref.read(dbProvider).searchFoods(_query);
   }
 
   void _search(String query) {
-    setState(() => _results = ref.read(dbProvider).searchFoods(query));
+    setState(() {
+      _query = query;
+      _results = ref.read(dbProvider).searchFoods(query);
+    });
   }
 
   Future<void> _createFood() async {
     final created = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const FoodFormScreen()),
     );
-    if (created == true) _search('');
+    if (created == true) _search(_query);
   }
 
   Future<void> _addToDiary(Food food) async {
@@ -43,6 +48,24 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(seedProvider, (_, seed) {
+      if (!seed.isLoading) _search(_query);
+    });
+    if (ref.watch(seedProvider).isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Add food')),
+        body: const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Preparing the food database…'),
+            ],
+          ),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: TextField(
@@ -88,7 +111,9 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
             itemCount: foods.length,
             itemBuilder: (context, i) => ListTile(
               title: Text(foods[i].name),
-              subtitle: Text(foods[i].source),
+              subtitle: Text(
+                foods[i].source == usdaSource ? 'USDA' : 'Custom',
+              ),
               onTap: () => _addToDiary(foods[i]),
             ),
           );

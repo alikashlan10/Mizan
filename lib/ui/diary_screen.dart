@@ -21,6 +21,8 @@ class DiaryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Start importing the bundled foods as soon as the app opens.
+    ref.watch(seedProvider);
     final day = ref.watch(selectedDayProvider);
     final entries = ref.watch(dayEntriesProvider).value ?? const [];
     final totals = ref.watch(dayTotalsProvider).value ?? const {};

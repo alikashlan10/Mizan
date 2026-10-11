@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mizan/data/database.dart';
+import 'package:mizan/data/food_seed.dart';
 
 void main() {
   late AppDatabase db;
@@ -21,11 +24,55 @@ void main() {
     expect(nutrients, hasLength(8));
   });
 
-  test('search matches part of the name', () async {
-    await createFood('Rolled oats', {});
+  test('search matches every word, shortest names first', () async {
+    await createFood('Egg, whole, raw, fresh', {});
+    await createFood('Egg, whole, raw', {});
     await createFood('Olive oil', {});
-    expect((await db.searchFoods('oat')).map((f) => f.name), ['Rolled oats']);
-    expect(await db.searchFoods(''), hasLength(2));
+    expect((await db.searchFoods('raw egg')).map((f) => f.name), [
+      'Egg, whole, raw',
+      'Egg, whole, raw, fresh',
+    ]);
+    expect(await db.searchFoods(''), hasLength(3));
+  });
+
+  test('seeds bundled foods once, skipping blank amounts', () async {
+    var loads = 0;
+    Future<String> load() async {
+      loads++;
+      return '1\tOil, olive\t884\t0\t0\t100\t0\t0\t13.8\t2\n'
+          '2\tCoating mix\t377\t6.1\t79.8\t3.7\t\t\t\t2182\n';
+    }
+
+    await seedFoodsIfNeeded(db, load);
+    await seedFoodsIfNeeded(db, load);
+    expect(loads, 1);
+
+    final coating = (await db.searchFoods('coating')).single;
+    expect(coating.source, usdaSource);
+    await db.addEntry(
+      day: '2026-10-11',
+      meal: Meal.snacks,
+      foodId: coating.id,
+      grams: 200,
+    );
+    final totals = await db.watchDayTotals('2026-10-11').first;
+    expect(totals[NutrientCodes.sodium], closeTo(4364, 1e-9));
+    expect(totals.containsKey(NutrientCodes.fiber), isFalse);
+  });
+
+  test('imports the bundled USDA dataset', () async {
+    await seedFoodsIfNeeded(db, File(usdaSeedAsset).readAsString);
+    final oil = (await db.searchFoods('oil olive salad')).first;
+    expect(oil.name, 'Oil, olive, salad or cooking');
+    await db.addEntry(
+      day: '2026-10-11',
+      meal: Meal.lunch,
+      foodId: oil.id,
+      grams: 10,
+    );
+    final totals = await db.watchDayTotals('2026-10-11').first;
+    expect(totals[NutrientCodes.energy], closeTo(88.4, 1e-9));
+    expect(totals[NutrientCodes.fat], closeTo(10, 1e-9));
   });
 
   test('day totals scale nutrients by grams eaten', () async {

@@ -20,7 +20,10 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [dbProvider.overrideWithValue(db)],
+        overrides: [
+          dbProvider.overrideWithValue(db),
+          seedProvider.overrideWith((ref) async {}),
+        ],
         child: const MizanApp(),
       ),
     );

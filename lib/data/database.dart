@@ -70,6 +70,19 @@ const _coreNutrients = [
   (NutrientCodes.sodium, 'Sodium', 'mg', 1093),
 ];
 
+/// A food from a bundled dataset, with amounts per 100 g keyed by nutrient code.
+class SeedFood {
+  const SeedFood({
+    required this.sourceId,
+    required this.name,
+    required this.amounts,
+  });
+
+  final String sourceId;
+  final String name;
+  final Map<String, double> amounts;
+}
+
 class DiaryItem {
   const DiaryItem({
     required this.entryId,
@@ -118,13 +131,57 @@ class AppDatabase extends _$AppDatabase {
       (select(nutrients)..orderBy([(n) => OrderingTerm(expression: n.sortOrder)]))
           .get();
 
+  /// Matches foods whose name contains every word of [query], shortest names
+  /// first so that plain foods rank above their many variations.
   Future<List<Food>> searchFoods(String query) {
     final q = select(foods)
-      ..orderBy([(f) => OrderingTerm(expression: f.name)])
+      ..orderBy([
+        (f) => OrderingTerm(expression: f.name.length),
+        (f) => OrderingTerm(expression: f.name),
+      ])
       ..limit(50);
-    final trimmed = query.trim();
-    if (trimmed.isNotEmpty) q.where((f) => f.name.like('%$trimmed%'));
+    for (final word in query.trim().split(RegExp(r'\s+'))) {
+      if (word.isNotEmpty) q.where((f) => f.name.like('%$word%'));
+    }
     return q.get();
+  }
+
+  Future<bool> hasFoodsFrom(String source) async {
+    final q = select(foods)
+      ..where((f) => f.source.equals(source))
+      ..limit(1);
+    return (await q.get()).isNotEmpty;
+  }
+
+  Future<void> importFoods(String source, List<SeedFood> seed) {
+    return transaction(() async {
+      await batch((b) {
+        b.insertAll(foods, [
+          for (final food in seed)
+            FoodsCompanion.insert(
+              name: food.name,
+              source: source,
+              sourceId: Value(food.sourceId),
+            ),
+        ]);
+      });
+      final nutrientIds = {for (final n in await allNutrients()) n.code: n.id};
+      final imported = await (select(
+        foods,
+      )..where((f) => f.source.equals(source))).get();
+      final foodIds = {for (final f in imported) f.sourceId: f.id};
+      await batch((b) {
+        b.insertAll(foodNutrients, [
+          for (final food in seed)
+            for (final e in food.amounts.entries)
+              FoodNutrientsCompanion.insert(
+                foodId: foodIds[food.sourceId]!,
+                nutrientId: nutrientIds[e.key]!,
+                amount: e.value,
+              ),
+        ]);
+      });
+    });
   }
 
   /// [amountsPer100g] is keyed by nutrient id.
