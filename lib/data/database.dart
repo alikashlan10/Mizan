@@ -102,7 +102,18 @@ class DiaryItem {
 @DriftDatabase(tables: [Nutrients, Foods, FoodNutrients, DiaryEntries])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
-    : super(executor ?? driftDatabase(name: 'mizan'));
+    : super(
+        executor ??
+            driftDatabase(
+              name: 'mizan',
+              // Both files live in web/ and come from the drift release
+              // matching the version in pubspec.lock.
+              web: DriftWebOptions(
+                sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+                driftWorker: Uri.parse('drift_worker.js'),
+              ),
+            ),
+      );
 
   @override
   int get schemaVersion => 1;
