@@ -1,0 +1,5 @@
+{
+  // Fixed web port for every run: browser storage is tied to the address, so
+  // a random port would give the app an empty database each time.
+  "dart.flutterRunAdditionalArgs": ["--web-port", "8080"]
+}
