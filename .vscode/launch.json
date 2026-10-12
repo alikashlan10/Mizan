@@ -6,6 +6,16 @@
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart"
+    },
+    {
+      // Fixed port: browser storage is tied to the address, so a random port
+      // would give the app an empty database on every run.
+      "name": "Mizan (Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "chrome",
+      "args": ["--web-port", "8080"]
     }
   ]
 }
