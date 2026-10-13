@@ -24,7 +24,7 @@ class MeterRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final style = theme.textTheme.bodySmall?.copyWith(fontSize: 11);
+    final style = theme.textTheme.bodySmall;
     final fill = (fraction ?? 0).clamp(0.0, 1.0);
 
     return Padding(

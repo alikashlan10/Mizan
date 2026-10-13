@@ -29,8 +29,12 @@ void main() {
     expect(find.text('Intake'), findsOneWidget);
     expect(find.text('Expenditure'), findsOneWidget);
     expect(find.text('Remaining'), findsOneWidget);
-    // No profile yet, so two of the rings ask for one.
-    expect(find.text('Fill in your profile to see this'), findsNWidgets(2));
+    // No profile yet, so the card asks for one and the bars have no targets.
+    expect(find.textContaining('Fill in your profile'), findsOneWidget);
+    for (final macro in ['Protein', 'Carbs', 'Fat']) {
+      expect(find.text(macro), findsOneWidget);
+    }
+    expect(find.text('0 g'), findsNWidgets(3));
     expect(find.text('Breakfast'), findsOneWidget);
     expect(find.byTooltip('Add food to breakfast'), findsOneWidget);
     expect(find.widgetWithText(NavigationBar, 'Profile'), findsOneWidget);
