@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'database.dart';
+part of 'app_database.dart';
 
 // ignore_for_file: type=lint
 class $NutrientsTable extends Nutrients
@@ -522,7 +522,7 @@ class Food extends DataClass implements Insertable<Food> {
   final int id;
   final String name;
 
-  /// Dataset the food came from, e.g. `usda_sr` or `custom`.
+  /// Dataset the food came from; see `FoodSources`.
   final String source;
   final String? sourceId;
   const Food({
@@ -1140,7 +1140,7 @@ class $DiaryEntriesTable extends DiaryEntries
 class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
   final int id;
 
-  /// Local calendar day as `yyyy-MM-dd`.
+  /// Local calendar day; see `dayKey`.
   final String day;
   final Meal meal;
   final int foodId;

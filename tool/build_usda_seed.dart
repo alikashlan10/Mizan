@@ -5,7 +5,7 @@
 import 'dart:io';
 
 /// FDC nutrient ids in the column order of the output file. Must match the
-/// nutrient codes listed in lib/data/food_seed.dart.
+/// nutrient codes listed in lib/features/foods/data/food_seed.dart.
 const nutrientIds = [1008, 1003, 1005, 1004, 1079, 2000, 1258, 1093];
 
 List<String> parseCsvLine(String line) {

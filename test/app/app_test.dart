@@ -1,28 +1,23 @@
-import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mizan/data/database.dart';
-import 'package:mizan/main.dart';
-import 'package:mizan/providers.dart';
+import 'package:mizan/app/app.dart';
+import 'package:mizan/core/database/database_provider.dart';
+import 'package:mizan/features/foods/presentation/food_providers.dart';
+
+import '../support/test_database.dart';
 
 void main() {
-  testWidgets('diary opens on today with an empty summary', (tester) async {
-    // Drift otherwise closes query streams on a timer, which the test binding
-    // reports as still pending once the widget tree is disposed.
-    final db = AppDatabase(
-      DatabaseConnection(
-        NativeDatabase.memory(),
-        closeStreamsSynchronously: true,
-      ),
-    );
+  testWidgets('opens on today\'s diary with the navigation bar', (
+    tester,
+  ) async {
+    final db = newTestDatabase();
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          dbProvider.overrideWithValue(db),
-          seedProvider.overrideWith((ref) async {}),
+          appDatabaseProvider.overrideWithValue(db),
+          foodSeedProvider.overrideWith((ref) async {}),
         ],
         child: const MizanApp(),
       ),

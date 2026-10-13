@@ -1,6 +1,8 @@
-import 'database.dart';
+import 'package:mizan/core/domain/nutrient_codes.dart';
+import 'package:mizan/features/foods/data/food_repository.dart';
+import 'package:mizan/features/foods/domain/food_sources.dart';
+import 'package:mizan/features/foods/domain/seed_food.dart';
 
-const usdaSource = 'usda_sr';
 const usdaSeedAsset = 'assets/data/usda_sr.tsv';
 
 /// Nutrient columns of the seed file, after the source id and name. Must match
@@ -35,9 +37,9 @@ List<SeedFood> parseSeedTsv(String tsv) {
 
 /// Imports the bundled USDA foods the first time the app runs.
 Future<void> seedFoodsIfNeeded(
-  AppDatabase db,
+  FoodRepository foods,
   Future<String> Function() loadTsv,
 ) async {
-  if (await db.hasFoodsFrom(usdaSource)) return;
-  await db.importFoods(usdaSource, parseSeedTsv(await loadTsv()));
+  if (await foods.hasFoodsFrom(FoodSources.usda)) return;
+  await foods.importFoods(FoodSources.usda, parseSeedTsv(await loadTsv()));
 }

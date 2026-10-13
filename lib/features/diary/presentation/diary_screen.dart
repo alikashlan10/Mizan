@@ -1,28 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-
-import '../data/database.dart';
-import '../providers.dart';
-import 'food_search_screen.dart';
-
-const mealLabels = {
-  Meal.breakfast: 'Breakfast',
-  Meal.lunch: 'Lunch',
-  Meal.dinner: 'Dinner',
-  Meal.snacks: 'Snacks',
-};
-
-String formatAmount(double value) =>
-    value >= 100 ? value.round().toString() : value.toStringAsFixed(1);
+import 'package:mizan/core/domain/meal.dart';
+import 'package:mizan/core/domain/nutrient_codes.dart';
+import 'package:mizan/core/formatting/amount_format.dart';
+import 'package:mizan/features/diary/data/diary_repository.dart';
+import 'package:mizan/features/diary/domain/diary_item.dart';
+import 'package:mizan/features/diary/presentation/add_entry_dialog.dart';
+import 'package:mizan/features/diary/presentation/diary_providers.dart';
+import 'package:mizan/features/diary/presentation/meal_labels.dart';
+import 'package:mizan/features/foods/presentation/food_search_screen.dart';
 
 class DiaryScreen extends ConsumerWidget {
   const DiaryScreen({super.key});
 
+  Future<void> _pickDay(BuildContext context, WidgetRef ref) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: ref.read(selectedDayProvider),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) ref.read(selectedDayProvider.notifier).select(picked);
+  }
+
+  void _addFood(BuildContext context) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => FoodSearchScreen(
+          autofocus: true,
+          onFoodSelected: (context, food) async {
+            final added = await showAddEntryDialog(context, food);
+            if (added && context.mounted) Navigator.of(context).pop();
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Start importing the bundled foods as soon as the app opens.
-    ref.watch(seedProvider);
     final day = ref.watch(selectedDayProvider);
     final entries = ref.watch(dayEntriesProvider).value ?? const [];
     final totals = ref.watch(dayTotalsProvider).value ?? const {};
@@ -37,17 +54,7 @@ class DiaryScreen extends ConsumerWidget {
           onPressed: () => ref.read(selectedDayProvider.notifier).shift(-1),
         ),
         title: TextButton(
-          onPressed: () async {
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: day,
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2100),
-            );
-            if (picked != null) {
-              ref.read(selectedDayProvider.notifier).set(picked);
-            }
-          },
+          onPressed: () => _pickDay(context, ref),
           child: Text(
             isToday ? 'Today' : DateFormat.yMMMEd().format(day),
             style: Theme.of(context).textTheme.titleLarge,
@@ -75,9 +82,7 @@ class DiaryScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
         label: const Text('Add food'),
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const FoodSearchScreen()),
-        ),
+        onPressed: () => _addFood(context),
       ),
     );
   }
@@ -93,10 +98,7 @@ class _SummaryCard extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     Widget macro(String label, String code) => Column(
       children: [
-        Text(
-          '${formatAmount(totals[code] ?? 0)} g',
-          style: text.titleMedium,
-        ),
+        Text('${formatAmount(totals[code] ?? 0)} g', style: text.titleMedium),
         Text(label, style: text.bodySmall),
       ],
     );
@@ -144,10 +146,7 @@ class _MealSection extends ConsumerWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                mealLabels[meal]!,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              Text(meal.label, style: Theme.of(context).textTheme.titleMedium),
               Text('${kcal.round()} kcal'),
             ],
           ),
@@ -162,7 +161,8 @@ class _MealSection extends ConsumerWidget {
               padding: const EdgeInsets.only(right: 16),
               child: const Icon(Icons.delete),
             ),
-            onDismissed: (_) => ref.read(dbProvider).deleteEntry(item.entryId),
+            onDismissed: (_) =>
+                ref.read(diaryRepositoryProvider).deleteEntry(item.entryId),
             child: ListTile(
               title: Text(item.foodName),
               subtitle: Text('${formatAmount(item.grams)} g'),

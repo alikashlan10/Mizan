@@ -72,13 +72,56 @@ it in navigation and in the data model.
 |---|---|---|
 | 2026-10-11 | Flutter, targeting Android and iOS. | One codebase; existing Flutter experience. |
 | 2026-10-11 | SQLite through Drift for storage. | Typed queries, migrations, fast aggregation for statistics. |
-| 2026-10-11 | Riverpod for state. | Simple and testable. |
+| 2026-10-11 | Riverpod for state (chosen over Bloc). | Less boilerplate than Bloc for a solo project, and it doubles as dependency injection. |
 | 2026-10-11 | fl_chart for charts. | Covers pie, bar, line and radar. |
 | 2026-10-11 | Nutrient amounts are stored per 100 g; each food records its source. | One base unit makes scaling, comparison and display conversion simple. |
 | 2026-10-11 | USDA SR Legacy (7,793 foods) is bundled as `assets/data/usda_sr.tsv`, built by `tool/build_usda_seed.dart`, and imported on first launch. | Public domain, small (0.7 MB), good generic coverage. |
 | 2026-10-11 | Diary days are stored as local `yyyy-MM-dd` text. | Avoids time-zone shifts moving entries between days. |
 | 2026-10-11 | Web platform enabled for development in Chrome. | Fast UI iteration without an emulator. Not a release target. |
 | 2026-10-12 | VS Code always runs web on port 8080. | Browser storage is per address; a random port loses the data each run. |
+
+### Architecture
+
+Decided 2026-10-13: feature-first folders with three layers per feature, so
+features stay independent and phase 2 can be added without touching phase 1.
+
+```
+lib/
+  main.dart
+  app/                 app widget and the navigation shell
+  core/                shared by every feature
+    database/          AppDatabase, tables, day keys
+    domain/            enums and constants the schema and features share
+    formatting/
+  features/
+    <feature>/
+      data/            repositories: the only code that queries the database
+      domain/          plain Dart models and rules, no Flutter imports
+      presentation/    screens, widgets, Riverpod providers and notifiers
+test/                  mirrors lib/
+```
+
+Rules:
+
+- **Widgets draw and forward user actions.** They never use `AppDatabase` or
+  write queries; they read providers and call repository or notifier methods.
+- **Repositories are the only code that talks to the database.** One per
+  feature, exposed through a Riverpod provider.
+- **Business rules are plain Dart in `domain/`** (calorie formula, exercise
+  estimates, comparison maths) and are unit-tested without Flutter.
+- **State**: Riverpod. Data comes from `StreamProvider`/`FutureProvider` over
+  repositories; shared screen state lives in a `Notifier`. Short-lived state
+  owned by one widget (text being typed, the selected tab) may stay in that
+  widget.
+- **Dependencies point one way**: `presentation → domain ← data`, and
+  features may depend on `core` but `core` never depends on a feature. A
+  feature may use another feature's screens or repositories only where it
+  genuinely builds on it (the diary uses foods, not the reverse).
+- **Imports** are always `package:mizan/...`; the analyzer enforces this and
+  a stricter rule set in `analysis_options.yaml`.
+- **Every repository and domain rule has tests**; `test/` mirrors `lib/`.
+- Drift row classes (`Food`, `Nutrient`) are used directly as models until a
+  feature needs something they cannot express.
 
 ### Environment
 
