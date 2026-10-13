@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/features/diary/presentation/add_entry_dialog.dart';
 import 'package:mizan/features/diary/presentation/diary_screen.dart';
+import 'package:mizan/features/foods/presentation/food_detail_screen.dart';
 import 'package:mizan/features/foods/presentation/food_providers.dart';
 import 'package:mizan/features/foods/presentation/food_search_screen.dart';
 import 'package:mizan/features/profile/presentation/profile_screen.dart';
@@ -30,13 +31,22 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         children: [
           const DiaryScreen(),
           FoodSearchScreen(
-            onFoodSelected: (context, food) async {
-              final added = await showAddEntryDialog(context, food);
-              if (!added || !context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Added ${food.name} to the diary')),
-              );
-            },
+            onFoodSelected: (context, food) => Navigator.of(context).push<void>(
+              MaterialPageRoute(
+                builder: (_) => FoodDetailScreen(
+                  food: food,
+                  onAddToDiary: (context) async {
+                    final added = await showAddEntryDialog(context, food);
+                    if (!added || !context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Added ${food.name} to the diary'),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
           ),
           const _ComingSoon(title: 'Statistics'),
           const ProfileScreen(),

@@ -73,6 +73,8 @@ it in navigation and in the data model.
 | 2026-10-13 | An exercise entry stores its calories when logged. | Changing body weight later must not rewrite past days. |
 | 2026-10-14 | Under the Diary rings are only three full-width bars: protein, carbs and fat, each filling toward its daily target. The breakdowns of expenditure (resting, activity, exercise) and of remaining (target, exercise, eaten) move to the Statistics page. | The Diary should show only the most important figures; detail belongs in Statistics. |
 | 2026-10-13 | Macro targets are set in the Profile as Standard, Percent of calories, or Grams. Standard is 20% protein / 50% carbohydrate / 30% fat of the calorie target, converted at 4 / 4 / 9 kcal per gram. Percentages must total 100. | Standard sits inside the commonly advised ranges (protein 10–35%, carbohydrate 45–65%, fat 20–35%); gram targets stay fixed when the calorie target changes. |
+| 2026-10-14 | Food search matches the start of words ("cook" finds "cooked", not "uncooked"), every typed word must match, and shorter names rank first. | Matching inside words returned opposites such as "uncooked" for "cooked". |
+| 2026-10-14 | In the Foods tab, tapping a food opens its nutrition facts (with an adjustable amount and an Add to diary button). From a Diary section's plus button, tapping a food goes straight to the amount dialog. | Browsing wants detail; logging wants speed. |
 | 2026-10-13 | Custom meals are recipes: several foods with amounts, nutrition computed from them. Custom foods keep manual entry of nutrition facts. | Avoids retyping facts for meals built from known foods. |
 
 ### Technical

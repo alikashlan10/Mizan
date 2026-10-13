@@ -6,6 +6,7 @@ import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/features/foods/data/food_repository.dart';
 import 'package:mizan/features/foods/data/food_seed.dart';
 import 'package:mizan/features/foods/domain/food_sources.dart';
+import 'package:mizan/features/foods/domain/seed_food.dart';
 
 import '../../support/test_database.dart';
 
@@ -39,6 +40,71 @@ void main() {
       'Egg, whole, raw, fresh',
     ]);
     expect(await search(''), hasLength(3));
+  });
+
+  test('search matches the start of words, not their middle', () async {
+    await foods.createCustomFood('Rice, white, cooked', {});
+    await foods.createCustomFood('Rice, white, uncooked', {});
+    await foods.createCustomFood('Rice, short-grain (boiled)', {});
+
+    expect(await search('cooked'), ['Rice, white, cooked']);
+    expect(await search('cook'), ['Rice, white, cooked']);
+    expect(await search('grain'), ['Rice, short-grain (boiled)']);
+    expect(await search('boil'), ['Rice, short-grain (boiled)']);
+    expect(await search('RICE'), hasLength(3));
+  });
+
+  test('search treats % and _ as ordinary characters', () async {
+    await foods.createCustomFood('Milk, 2% fat', {});
+    await foods.createCustomFood('Milk, whole', {});
+
+    expect(await search('2%'), ['Milk, 2% fat']);
+    expect(await search('%'), isEmpty);
+    expect(await search('_'), isEmpty);
+  });
+
+  test('search can be limited to one source', () async {
+    await foods.importFoods(FoodSources.usda, const [
+      SeedFood(sourceId: '1', name: 'Rice, white', amounts: {}),
+    ]);
+    await foods.createCustomFood('Rice pudding', {});
+
+    final custom = await foods
+        .watchSearch('rice', source: FoodSources.custom)
+        .first;
+    expect(custom.map((f) => f.name), ['Rice pudding']);
+    expect(await search('rice'), hasLength(2));
+  });
+
+  test('sources are listed only once they have foods, USDA first', () async {
+    expect(await foods.watchSources().first, isEmpty);
+
+    await foods.createCustomFood('Rice pudding', {});
+    expect(await foods.watchSources().first, [FoodSources.custom]);
+
+    await foods.importFoods(FoodSources.usda, const [
+      SeedFood(sourceId: '1', name: 'Rice, white', amounts: {}),
+    ]);
+    expect(await foods.watchSources().first, [
+      FoodSources.usda,
+      FoodSources.custom,
+    ]);
+  });
+
+  test('nutrition facts come back in display order', () async {
+    final ids = {for (final n in await foods.allNutrients()) n.code: n.id};
+    final rice = await foods.createCustomFood('Rice', {
+      ids[NutrientCodes.sodium]!: 5,
+      ids[NutrientCodes.energy]!: 130,
+    });
+
+    final facts = await foods.nutrientsOf(rice);
+    expect(facts.map((f) => f.code), [
+      NutrientCodes.energy,
+      NutrientCodes.sodium,
+    ]);
+    expect(facts.first.unit, 'kcal');
+    expect(facts.first.amountIn(250), 325);
   });
 
   test('search results update when a food is created', () async {

@@ -24,6 +24,9 @@ class FoodSearchScreen extends ConsumerStatefulWidget {
 class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   String _query = '';
 
+  /// The source tab being searched; null is the "All" tab.
+  String? _source;
+
   /// Results of the previous query, shown until the new ones arrive.
   List<Food>? _foods;
 
@@ -35,11 +38,35 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   @override
   Widget build(BuildContext context) {
     final seeding = ref.watch(foodSeedProvider).isLoading;
+    final sources = ref.watch(foodSourcesProvider).value ?? const [];
+    // The selected source can disappear, for example when its last custom
+    // food is deleted.
+    final source = sources.contains(_source) ? _source : null;
     final foods = _foods =
-        ref.watch(foodSearchProvider(_query)).value ?? _foods;
+        ref.watch(foodSearchProvider((query: _query, source: source))).value ??
+        _foods;
+    final tabs = <String?>[null, ...sources];
 
     return Scaffold(
       appBar: AppBar(
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(kTextTabBarHeight),
+          child: DefaultTabController(
+            // A new controller whenever the set of tabs changes.
+            key: ValueKey(tabs.join('|')),
+            length: tabs.length,
+            initialIndex: tabs.indexOf(source),
+            child: TabBar(
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              tabs: [
+                for (final tab in tabs)
+                  Tab(text: tab == null ? 'All' : FoodSources.label(tab)),
+              ],
+              onTap: (i) => setState(() => _source = tabs[i]),
+            ),
+          ),
+        ),
         title: TextField(
           autofocus: widget.autofocus,
           decoration: const InputDecoration(
