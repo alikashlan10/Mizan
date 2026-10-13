@@ -58,6 +58,10 @@ it in navigation and in the data model.
 | 2026-10-11 | Barcode scanning and branded foods are deferred. | Branded datasets are several GB and cannot be bundled. |
 | 2026-10-11 | Food data comes from trusted sources worldwide, plus manual user entries. | Accuracy is the point of the app. |
 | 2026-10-13 | Scope expands to workouts as phase 2; phase 1 is nutrition. | Keep phase 2 in mind so it does not force a redesign. |
+| 2026-10-13 | Navigation is a bottom bar: Diary, Foods, Workouts (phase 2, hidden until then), Statistics, Profile. No start page. Comparison and Customization live inside Foods. | Most opens are "log something today"; a chooser page costs a tap each time, and food and exercise share one daily view. |
+| 2026-10-13 | Phase 1 exercise is a fixed choice of three types: cardio walking, cardio running, weight-lifting session. Each has an estimated effect on expenditure based on the user's personal information; a weight-lifting session uses a fixed average. | Keeps phase 1 simple while still filling the expenditure chart. |
+| 2026-10-13 | Phase 2 workouts feed the same expenditure figure as phase 1 exercise. | One daily energy picture, whatever the source. |
+| 2026-10-13 | Custom meals are recipes: several foods with amounts, nutrition computed from them. Custom foods keep manual entry of nutrition facts. | Avoids retyping facts for meals built from known foods. |
 
 ### Technical
 
@@ -88,13 +92,11 @@ sodium).
 
 ## Open questions
 
-- **Navigation between phase 1 and phase 2 pages.** Proposed: a bottom
-  navigation bar with Diary, Foods, Workouts (phase 2), Statistics and
-  Profile, instead of a start page that chooses between nutrition and
-  workouts. Awaiting decision.
-- **Exercise in phase 1.** The Diary shows expenditure and lets the user add
-  exercise. Proposed: phase 1 logs exercise as a name plus calories burned;
-  phase 2 adds full workouts that feed the same expenditure figure.
+- **Exercise inputs.** Do walking and running take a duration (or distance)
+  from the user, with only weight lifting being a fixed per-session amount?
+  Which formula and constants to use for the estimates.
+- **Water.** Proposed: its own Diary section with quick-add amounts in ml
+  rather than a food search.
 - **NCCDB.** It is commercially licensed and cannot be bundled without a
   licence. Source tabs should be driven by whichever datasets are present.
 - **Full nutrient list.** The prototype tracks 8 nutrients; the target is
