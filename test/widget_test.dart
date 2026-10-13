@@ -32,6 +32,7 @@ void main() {
     expect(find.text('Today'), findsOneWidget);
     expect(find.text('0 kcal'), findsWidgets);
     expect(find.text('Breakfast'), findsOneWidget);
+    expect(find.widgetWithText(NavigationBar, 'Profile'), findsOneWidget);
     expect(
       find.widgetWithText(FloatingActionButton, 'Add food'),
       findsOneWidget,

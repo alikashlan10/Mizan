@@ -61,6 +61,9 @@ it in navigation and in the data model.
 | 2026-10-13 | Navigation is a bottom bar: Diary, Foods, Workouts (phase 2, hidden until then), Statistics, Profile. No start page. Comparison and Customization live inside Foods. | Most opens are "log something today"; a chooser page costs a tap each time, and food and exercise share one daily view. |
 | 2026-10-13 | Phase 1 exercise is a fixed choice of three types: cardio walking, cardio running, weight-lifting session. Each has an estimated effect on expenditure based on the user's personal information; a weight-lifting session uses a fixed average. | Keeps phase 1 simple while still filling the expenditure chart. |
 | 2026-10-13 | Phase 2 workouts feed the same expenditure figure as phase 1 exercise. | One daily energy picture, whatever the source. |
+| 2026-10-13 | Walking and running take a duration from the user; calories burned are estimated as intensity factor × body weight × hours, using the weight from Personal settings. Only weight lifting is a fixed per-session amount. | Calories burned depend heavily on time. |
+| 2026-10-13 | Water is its own Diary section with quick-add amounts in ml, not a food search. | Water is not a meal and should take one tap to log. |
+| 2026-10-13 | Food source tabs appear only for datasets that are present (USDA and Custom for now). NCCDB is not included. | NCCDB is commercially licensed and cannot be bundled; data-driven tabs let new sources appear automatically. |
 | 2026-10-13 | Custom meals are recipes: several foods with amounts, nutrition computed from them. Custom foods keep manual entry of nutrition facts. | Avoids retyping facts for meals built from known foods. |
 
 ### Technical
@@ -92,13 +95,10 @@ sodium).
 
 ## Open questions
 
-- **Exercise inputs.** Do walking and running take a duration (or distance)
-  from the user, with only weight lifting being a fixed per-session amount?
-  Which formula and constants to use for the estimates.
-- **Water.** Proposed: its own Diary section with quick-add amounts in ml
-  rather than a food search.
-- **NCCDB.** It is commercially licensed and cannot be bundled without a
-  licence. Source tabs should be driven by whichever datasets are present.
+- **Exercise constants.** The intensity factors for walking and running and
+  the fixed amount for a weight-lifting session.
+- **Calorie calculator.** Which formula, which activity levels, and the
+  calorie offset for each goal level (medium cut, extreme cut, and so on).
 - **Full nutrient list.** The prototype tracks 8 nutrients; the target is
   the full vitamin, mineral, amino acid and fatty acid set.
 - **Display options** for calories and amounts (kcal/kJ, g/oz, per 100 g or

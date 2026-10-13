@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'ui/diary_screen.dart';
+import 'ui/home_shell.dart';
 
 void main() {
   runApp(const ProviderScope(child: MizanApp()));
@@ -20,7 +20,7 @@ class MizanApp extends StatelessWidget {
         colorSchemeSeed: Colors.teal,
         brightness: Brightness.dark,
       ),
-      home: const DiaryScreen(),
+      home: const HomeShell(),
     );
   }
 }

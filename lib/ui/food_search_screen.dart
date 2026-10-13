@@ -8,7 +8,11 @@ import 'diary_screen.dart';
 import 'food_form_screen.dart';
 
 class FoodSearchScreen extends ConsumerStatefulWidget {
-  const FoodSearchScreen({super.key});
+  const FoodSearchScreen({super.key, this.asTab = false});
+
+  /// Whether this is the Foods tab rather than a page pushed from the diary,
+  /// in which case it stays open after a food is added.
+  final bool asTab;
 
   @override
   ConsumerState<FoodSearchScreen> createState() => _FoodSearchScreenState();
@@ -43,7 +47,14 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
       context: context,
       builder: (_) => _AddEntryDialog(food: food),
     );
-    if (added == true && mounted) Navigator.of(context).pop();
+    if (added != true || !mounted) return;
+    if (widget.asTab) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Added ${food.name} to the diary')),
+      );
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -53,7 +64,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     });
     if (ref.watch(seedProvider).isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Add food')),
+        appBar: AppBar(title: Text(widget.asTab ? 'Foods' : 'Add food')),
         body: const Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -69,7 +80,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     return Scaffold(
       appBar: AppBar(
         title: TextField(
-          autofocus: true,
+          autofocus: !widget.asTab,
           decoration: const InputDecoration(
             hintText: 'Search foods',
             border: InputBorder.none,
