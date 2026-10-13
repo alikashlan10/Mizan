@@ -1,3 +1,4 @@
+import 'package:mizan/features/profile/domain/macro_targets.dart';
 import 'package:mizan/features/profile/domain/profile.dart';
 
 extension SexLabel on Sex {
@@ -22,6 +23,14 @@ extension ActivityLevelLabel on ActivityLevel {
     ActivityLevel.moderate => 'Exercise 3–5 days a week',
     ActivityLevel.veryActive => 'Exercise 6–7 days a week',
     ActivityLevel.extraActive => 'Hard daily exercise or a physical job',
+  };
+}
+
+extension MacroTargetModeLabel on MacroTargetMode {
+  String get label => switch (this) {
+    MacroTargetMode.standard => 'Standard',
+    MacroTargetMode.percent => 'Percent',
+    MacroTargetMode.grams => 'Grams',
   };
 }
 

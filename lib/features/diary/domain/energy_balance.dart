@@ -1,3 +1,4 @@
+import 'package:mizan/core/domain/macro_energy.dart';
 import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/features/profile/domain/calorie_calculator.dart';
 
@@ -12,9 +13,9 @@ class MacroEnergy {
 
   /// [totals] is intake in grams keyed by nutrient code.
   factory MacroEnergy.fromTotals(Map<String, double> totals) => MacroEnergy(
-    proteinKcal: (totals[NutrientCodes.protein] ?? 0) * 4,
-    carbsKcal: (totals[NutrientCodes.carbs] ?? 0) * 4,
-    fatKcal: (totals[NutrientCodes.fat] ?? 0) * 9,
+    proteinKcal: (totals[NutrientCodes.protein] ?? 0) * kcalPerGramProtein,
+    carbsKcal: (totals[NutrientCodes.carbs] ?? 0) * kcalPerGramCarbs,
+    fatKcal: (totals[NutrientCodes.fat] ?? 0) * kcalPerGramFat,
   );
 
   final double proteinKcal;

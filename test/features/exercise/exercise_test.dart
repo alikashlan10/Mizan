@@ -60,7 +60,9 @@ void main() {
   test('a version 2 database gains the exercise table on upgrade', () async {
     final db = AppDatabase(
       NativeDatabase.memory(
-        setup: (raw) => raw.execute('PRAGMA user_version = 2'),
+        setup: (raw) => raw
+          ..execute(userProfilesV2Sql)
+          ..execute('PRAGMA user_version = 2'),
       ),
     );
     addTearDown(db.close);

@@ -43,6 +43,13 @@ class UserProfiles extends Table {
   TextColumn get goal => text()();
   RealColumn get customTargetKcal => real().nullable()();
 
+  /// Name of the macro target mode; the three values below are percentages
+  /// or grams to match, and null for the standard split.
+  TextColumn get macroMode => text().withDefault(const Constant('standard'))();
+  RealColumn get macroProtein => real().nullable()();
+  RealColumn get macroCarbs => real().nullable()();
+  RealColumn get macroFat => real().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

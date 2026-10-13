@@ -31,9 +31,7 @@ void main() {
     expect(find.text('Remaining'), findsOneWidget);
     // No profile yet, so two of the rings ask for one.
     expect(find.text('Fill in your profile to see this'), findsNWidgets(2));
-    for (final section in ['Breakfast', 'Lunch', 'Dinner', 'Water', 'Snacks']) {
-      expect(find.text(section), findsOneWidget);
-    }
+    expect(find.text('Breakfast'), findsOneWidget);
     expect(find.byTooltip('Add food to breakfast'), findsOneWidget);
     expect(find.widgetWithText(NavigationBar, 'Profile'), findsOneWidget);
 

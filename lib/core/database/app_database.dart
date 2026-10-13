@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -67,7 +67,15 @@ class AppDatabase extends _$AppDatabase {
     },
     // Add one step per schema version; never edit a step that has shipped.
     onUpgrade: (m, from, to) async {
-      if (from < 2) await m.createTable(userProfiles);
+      if (from < 2) {
+        // Created in its current shape, so the column steps below are skipped.
+        await m.createTable(userProfiles);
+      } else if (from < 4) {
+        await m.addColumn(userProfiles, userProfiles.macroMode);
+        await m.addColumn(userProfiles, userProfiles.macroProtein);
+        await m.addColumn(userProfiles, userProfiles.macroCarbs);
+        await m.addColumn(userProfiles, userProfiles.macroFat);
+      }
       if (from < 3) {
         await m.createTable(waterEntries);
         await m.createTable(exerciseEntries);

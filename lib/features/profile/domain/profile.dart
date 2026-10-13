@@ -1,3 +1,5 @@
+import 'package:mizan/features/profile/domain/macro_targets.dart';
+
 // These enums are stored in the database by name: renaming a value needs a
 // migration.
 
@@ -39,6 +41,7 @@ class Profile {
     required this.activity,
     required this.goal,
     this.customTargetKcal,
+    this.macros = const MacroSetting.standard(),
   });
 
   final Sex sex;
@@ -50,4 +53,7 @@ class Profile {
 
   /// Daily target set by hand, replacing the calculated one.
   final double? customTargetKcal;
+
+  /// How the daily protein, carbohydrate and fat targets are set.
+  final MacroSetting macros;
 }

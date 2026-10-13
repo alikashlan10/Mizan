@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/domain/nutrient_codes.dart';
-import 'package:mizan/core/formatting/amount_format.dart';
 import 'package:mizan/core/theme/app_colors.dart';
+import 'package:mizan/core/widgets/meter_row.dart';
 import 'package:mizan/core/widgets/ring_chart.dart';
 import 'package:mizan/features/diary/domain/energy_balance.dart';
 import 'package:mizan/features/diary/presentation/diary_providers.dart';
+import 'package:mizan/features/profile/domain/macro_targets.dart';
+import 'package:mizan/features/profile/presentation/profile_providers.dart';
 
 /// The day at a glance: what was eaten, what was burned, and what is left.
 class DayRingsCard extends ConsumerWidget {
@@ -15,6 +17,7 @@ class DayRingsCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final totals = ref.watch(dayTotalsProvider).value ?? const {};
     final balance = ref.watch(energyBalanceProvider);
+    final macroTargets = ref.watch(macroTargetsProvider);
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -24,7 +27,11 @@ class DayRingsCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: _IntakeRing(totals: totals, balance: balance),
+              child: _IntakeRing(
+                totals: totals,
+                balance: balance,
+                targets: macroTargets,
+              ),
             ),
             Expanded(child: _ExpenditureRing(balance: balance)),
             Expanded(child: _RemainingRing(balance: balance)),
@@ -35,16 +42,38 @@ class DayRingsCard extends ConsumerWidget {
   }
 }
 
+/// Share of [whole] that [part] makes up, or null when there is no whole.
+double? _share(double part, double? whole) =>
+    whole == null || whole <= 0 ? null : part / whole;
+
 class _IntakeRing extends StatelessWidget {
-  const _IntakeRing({required this.totals, required this.balance});
+  const _IntakeRing({
+    required this.totals,
+    required this.balance,
+    required this.targets,
+  });
 
   final Map<String, double> totals;
   final EnergyBalance balance;
 
+  /// Daily macro targets in grams; null until the user has a profile.
+  final MacroValues? targets;
+
   @override
   Widget build(BuildContext context) {
     final macros = MacroEnergy.fromTotals(totals);
-    String grams(String code) => '${formatAmount(totals[code] ?? 0)} g';
+
+    MeterRow macro(String label, String code, double? target, Color color) {
+      final eaten = totals[code] ?? 0;
+      return MeterRow(
+        label: label,
+        value: target == null
+            ? '${eaten.round()} g'
+            : '${eaten.round()}/${target.round()} g',
+        fraction: _share(eaten, target),
+        color: color,
+      );
+    }
 
     return _RingColumn(
       title: 'Intake',
@@ -55,18 +84,20 @@ class _IntakeRing extends StatelessWidget {
       ],
       centerValue: balance.intakeKcal.round().toString(),
       centerLabel: 'kcal',
-      legend: [
-        _LegendRow(
+      details: [
+        macro(
           'Protein',
-          grams(NutrientCodes.protein),
-          color: AppColors.chartProtein,
+          NutrientCodes.protein,
+          targets?.protein,
+          AppColors.chartProtein,
         ),
-        _LegendRow(
+        macro(
           'Carbs',
-          grams(NutrientCodes.carbs),
-          color: AppColors.chartCarbs,
+          NutrientCodes.carbs,
+          targets?.carbs,
+          AppColors.chartCarbs,
         ),
-        _LegendRow('Fat', grams(NutrientCodes.fat), color: AppColors.chartFat),
+        macro('Fat', NutrientCodes.fat, targets?.fat, AppColors.chartFat),
       ],
     );
   }
@@ -81,10 +112,18 @@ class _ExpenditureRing extends StatelessWidget {
   Widget build(BuildContext context) {
     final resting = balance.restingKcal;
     final activity = balance.activityKcal;
-    if (resting == null || activity == null) {
+    final total = balance.expenditureKcal;
+    if (resting == null || activity == null || total == null) {
       return const _RingColumn.needsProfile(title: 'Expenditure');
     }
-    String kcal(double value) => value.round().toString();
+
+    // These have no target, so each bar shows its share of the day's total.
+    MeterRow part(String label, double kcal, Color color) => MeterRow(
+      label: label,
+      value: kcal.round().toString(),
+      fraction: _share(kcal, total),
+      color: color,
+    );
 
     return _RingColumn(
       title: 'Expenditure',
@@ -96,16 +135,12 @@ class _ExpenditureRing extends StatelessWidget {
           color: AppColors.chartExercise,
         ),
       ],
-      centerValue: kcal(balance.expenditureKcal!),
+      centerValue: total.round().toString(),
       centerLabel: 'kcal',
-      legend: [
-        _LegendRow('Resting', kcal(resting), color: AppColors.chartResting),
-        _LegendRow('Activity', kcal(activity), color: AppColors.chartActivity),
-        _LegendRow(
-          'Exercise',
-          kcal(balance.exerciseKcal),
-          color: AppColors.chartExercise,
-        ),
+      details: [
+        part('Resting', resting, AppColors.chartResting),
+        part('Activity', activity, AppColors.chartActivity),
+        part('Exercise', balance.exerciseKcal, AppColors.chartExercise),
       ],
     );
   }
@@ -119,12 +154,14 @@ class _RemainingRing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final remaining = balance.remainingKcal;
+    final budget = balance.budgetKcal;
     final estimate = balance.estimate;
-    if (remaining == null || estimate == null) {
+    if (remaining == null || budget == null || estimate == null) {
       return const _RingColumn.needsProfile(title: 'Remaining');
     }
     final isOver = remaining < 0;
 
+    // Each bar is measured against the day's budget (target + exercise).
     return _RingColumn(
       title: 'Remaining',
       segments: isOver
@@ -135,10 +172,25 @@ class _RemainingRing extends StatelessWidget {
             ],
       centerValue: remaining.abs().round().toString(),
       centerLabel: isOver ? 'kcal over' : 'kcal left',
-      legend: [
-        _LegendRow('Target', estimate.targetKcal.round().toString()),
-        _LegendRow('Exercise', '+${balance.exerciseKcal.round()}'),
-        _LegendRow('Eaten', '−${balance.intakeKcal.round()}'),
+      details: [
+        MeterRow(
+          label: 'Target',
+          value: estimate.targetKcal.round().toString(),
+          fraction: _share(estimate.targetKcal, budget),
+          color: AppColors.primaryBright,
+        ),
+        MeterRow(
+          label: 'Exercise',
+          value: '+${balance.exerciseKcal.round()}',
+          fraction: _share(balance.exerciseKcal, budget),
+          color: AppColors.chartExercise,
+        ),
+        MeterRow(
+          label: 'Eaten',
+          value: balance.intakeKcal.round().toString(),
+          fraction: _share(balance.intakeKcal, budget),
+          color: isOver ? AppColors.critical : AppColors.primary,
+        ),
       ],
     );
   }
@@ -150,7 +202,7 @@ class _RingColumn extends StatelessWidget {
     required this.segments,
     required this.centerValue,
     required this.centerLabel,
-    required this.legend,
+    required this.details,
   });
 
   /// A ring that cannot be drawn until the user has a profile.
@@ -158,15 +210,15 @@ class _RingColumn extends StatelessWidget {
     : segments = const [],
       centerValue = '—',
       centerLabel = '',
-      legend = null;
+      details = null;
 
   final String title;
   final List<RingSegment> segments;
   final String centerValue;
   final String centerLabel;
 
-  /// Null shows a prompt to fill in the profile instead.
-  final List<Widget>? legend;
+  /// The bars under the ring. Null shows a prompt to fill in the profile.
+  final List<Widget>? details;
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +226,7 @@ class _RingColumn extends StatelessWidget {
     final muted = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
-    final legend = this.legend;
+    final details = this.details;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -199,54 +251,14 @@ class _RingColumn extends StatelessWidget {
           const SizedBox(height: 8),
           Text(title, style: theme.textTheme.labelLarge),
           const SizedBox(height: 6),
-          if (legend == null)
+          if (details == null)
             Text(
               'Fill in your profile to see this',
               style: muted,
               textAlign: TextAlign.center,
             )
           else
-            ...legend,
-        ],
-      ),
-    );
-  }
-}
-
-class _LegendRow extends StatelessWidget {
-  const _LegendRow(this.label, this.value, {this.color});
-
-  final String label;
-  final String value;
-
-  /// The series colour this row explains; omitted for plain figures.
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final style = theme.textTheme.bodySmall?.copyWith(fontSize: 11);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1),
-      child: Row(
-        children: [
-          if (color != null) ...[
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 4),
-          ],
-          Expanded(
-            child: Text(
-              label,
-              overflow: TextOverflow.ellipsis,
-              style: style?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ),
-          Text(value, style: style),
+            ...details,
         ],
       ),
     );

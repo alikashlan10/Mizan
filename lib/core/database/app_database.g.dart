@@ -1453,6 +1453,51 @@ class $UserProfilesTable extends UserProfiles
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _macroModeMeta = const VerificationMeta(
+    'macroMode',
+  );
+  @override
+  late final GeneratedColumn<String> macroMode = GeneratedColumn<String>(
+    'macro_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('standard'),
+  );
+  static const VerificationMeta _macroProteinMeta = const VerificationMeta(
+    'macroProtein',
+  );
+  @override
+  late final GeneratedColumn<double> macroProtein = GeneratedColumn<double>(
+    'macro_protein',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _macroCarbsMeta = const VerificationMeta(
+    'macroCarbs',
+  );
+  @override
+  late final GeneratedColumn<double> macroCarbs = GeneratedColumn<double>(
+    'macro_carbs',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _macroFatMeta = const VerificationMeta(
+    'macroFat',
+  );
+  @override
+  late final GeneratedColumn<double> macroFat = GeneratedColumn<double>(
+    'macro_fat',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1463,6 +1508,10 @@ class $UserProfilesTable extends UserProfiles
     activity,
     goal,
     customTargetKcal,
+    macroMode,
+    macroProtein,
+    macroCarbs,
+    macroFat,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1536,6 +1585,33 @@ class $UserProfilesTable extends UserProfiles
         ),
       );
     }
+    if (data.containsKey('macro_mode')) {
+      context.handle(
+        _macroModeMeta,
+        macroMode.isAcceptableOrUnknown(data['macro_mode']!, _macroModeMeta),
+      );
+    }
+    if (data.containsKey('macro_protein')) {
+      context.handle(
+        _macroProteinMeta,
+        macroProtein.isAcceptableOrUnknown(
+          data['macro_protein']!,
+          _macroProteinMeta,
+        ),
+      );
+    }
+    if (data.containsKey('macro_carbs')) {
+      context.handle(
+        _macroCarbsMeta,
+        macroCarbs.isAcceptableOrUnknown(data['macro_carbs']!, _macroCarbsMeta),
+      );
+    }
+    if (data.containsKey('macro_fat')) {
+      context.handle(
+        _macroFatMeta,
+        macroFat.isAcceptableOrUnknown(data['macro_fat']!, _macroFatMeta),
+      );
+    }
     return context;
   }
 
@@ -1577,6 +1653,22 @@ class $UserProfilesTable extends UserProfiles
         DriftSqlType.double,
         data['${effectivePrefix}custom_target_kcal'],
       ),
+      macroMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}macro_mode'],
+      )!,
+      macroProtein: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}macro_protein'],
+      ),
+      macroCarbs: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}macro_carbs'],
+      ),
+      macroFat: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}macro_fat'],
+      ),
     );
   }
 
@@ -1595,6 +1687,13 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
   final String activity;
   final String goal;
   final double? customTargetKcal;
+
+  /// Name of the macro target mode; the three values below are percentages
+  /// or grams to match, and null for the standard split.
+  final String macroMode;
+  final double? macroProtein;
+  final double? macroCarbs;
+  final double? macroFat;
   const UserProfile({
     required this.id,
     required this.sex,
@@ -1604,6 +1703,10 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     required this.activity,
     required this.goal,
     this.customTargetKcal,
+    required this.macroMode,
+    this.macroProtein,
+    this.macroCarbs,
+    this.macroFat,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1617,6 +1720,16 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     map['goal'] = Variable<String>(goal);
     if (!nullToAbsent || customTargetKcal != null) {
       map['custom_target_kcal'] = Variable<double>(customTargetKcal);
+    }
+    map['macro_mode'] = Variable<String>(macroMode);
+    if (!nullToAbsent || macroProtein != null) {
+      map['macro_protein'] = Variable<double>(macroProtein);
+    }
+    if (!nullToAbsent || macroCarbs != null) {
+      map['macro_carbs'] = Variable<double>(macroCarbs);
+    }
+    if (!nullToAbsent || macroFat != null) {
+      map['macro_fat'] = Variable<double>(macroFat);
     }
     return map;
   }
@@ -1633,6 +1746,16 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       customTargetKcal: customTargetKcal == null && nullToAbsent
           ? const Value.absent()
           : Value(customTargetKcal),
+      macroMode: Value(macroMode),
+      macroProtein: macroProtein == null && nullToAbsent
+          ? const Value.absent()
+          : Value(macroProtein),
+      macroCarbs: macroCarbs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(macroCarbs),
+      macroFat: macroFat == null && nullToAbsent
+          ? const Value.absent()
+          : Value(macroFat),
     );
   }
 
@@ -1650,6 +1773,10 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       activity: serializer.fromJson<String>(json['activity']),
       goal: serializer.fromJson<String>(json['goal']),
       customTargetKcal: serializer.fromJson<double?>(json['customTargetKcal']),
+      macroMode: serializer.fromJson<String>(json['macroMode']),
+      macroProtein: serializer.fromJson<double?>(json['macroProtein']),
+      macroCarbs: serializer.fromJson<double?>(json['macroCarbs']),
+      macroFat: serializer.fromJson<double?>(json['macroFat']),
     );
   }
   @override
@@ -1664,6 +1791,10 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       'activity': serializer.toJson<String>(activity),
       'goal': serializer.toJson<String>(goal),
       'customTargetKcal': serializer.toJson<double?>(customTargetKcal),
+      'macroMode': serializer.toJson<String>(macroMode),
+      'macroProtein': serializer.toJson<double?>(macroProtein),
+      'macroCarbs': serializer.toJson<double?>(macroCarbs),
+      'macroFat': serializer.toJson<double?>(macroFat),
     };
   }
 
@@ -1676,6 +1807,10 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     String? activity,
     String? goal,
     Value<double?> customTargetKcal = const Value.absent(),
+    String? macroMode,
+    Value<double?> macroProtein = const Value.absent(),
+    Value<double?> macroCarbs = const Value.absent(),
+    Value<double?> macroFat = const Value.absent(),
   }) => UserProfile(
     id: id ?? this.id,
     sex: sex ?? this.sex,
@@ -1687,6 +1822,10 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     customTargetKcal: customTargetKcal.present
         ? customTargetKcal.value
         : this.customTargetKcal,
+    macroMode: macroMode ?? this.macroMode,
+    macroProtein: macroProtein.present ? macroProtein.value : this.macroProtein,
+    macroCarbs: macroCarbs.present ? macroCarbs.value : this.macroCarbs,
+    macroFat: macroFat.present ? macroFat.value : this.macroFat,
   );
   UserProfile copyWithCompanion(UserProfilesCompanion data) {
     return UserProfile(
@@ -1700,6 +1839,14 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
       customTargetKcal: data.customTargetKcal.present
           ? data.customTargetKcal.value
           : this.customTargetKcal,
+      macroMode: data.macroMode.present ? data.macroMode.value : this.macroMode,
+      macroProtein: data.macroProtein.present
+          ? data.macroProtein.value
+          : this.macroProtein,
+      macroCarbs: data.macroCarbs.present
+          ? data.macroCarbs.value
+          : this.macroCarbs,
+      macroFat: data.macroFat.present ? data.macroFat.value : this.macroFat,
     );
   }
 
@@ -1713,7 +1860,11 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
           ..write('weightKg: $weightKg, ')
           ..write('activity: $activity, ')
           ..write('goal: $goal, ')
-          ..write('customTargetKcal: $customTargetKcal')
+          ..write('customTargetKcal: $customTargetKcal, ')
+          ..write('macroMode: $macroMode, ')
+          ..write('macroProtein: $macroProtein, ')
+          ..write('macroCarbs: $macroCarbs, ')
+          ..write('macroFat: $macroFat')
           ..write(')'))
         .toString();
   }
@@ -1728,6 +1879,10 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
     activity,
     goal,
     customTargetKcal,
+    macroMode,
+    macroProtein,
+    macroCarbs,
+    macroFat,
   );
   @override
   bool operator ==(Object other) =>
@@ -1740,7 +1895,11 @@ class UserProfile extends DataClass implements Insertable<UserProfile> {
           other.weightKg == this.weightKg &&
           other.activity == this.activity &&
           other.goal == this.goal &&
-          other.customTargetKcal == this.customTargetKcal);
+          other.customTargetKcal == this.customTargetKcal &&
+          other.macroMode == this.macroMode &&
+          other.macroProtein == this.macroProtein &&
+          other.macroCarbs == this.macroCarbs &&
+          other.macroFat == this.macroFat);
 }
 
 class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
@@ -1752,6 +1911,10 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
   final Value<String> activity;
   final Value<String> goal;
   final Value<double?> customTargetKcal;
+  final Value<String> macroMode;
+  final Value<double?> macroProtein;
+  final Value<double?> macroCarbs;
+  final Value<double?> macroFat;
   const UserProfilesCompanion({
     this.id = const Value.absent(),
     this.sex = const Value.absent(),
@@ -1761,6 +1924,10 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     this.activity = const Value.absent(),
     this.goal = const Value.absent(),
     this.customTargetKcal = const Value.absent(),
+    this.macroMode = const Value.absent(),
+    this.macroProtein = const Value.absent(),
+    this.macroCarbs = const Value.absent(),
+    this.macroFat = const Value.absent(),
   });
   UserProfilesCompanion.insert({
     this.id = const Value.absent(),
@@ -1771,6 +1938,10 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     required String activity,
     required String goal,
     this.customTargetKcal = const Value.absent(),
+    this.macroMode = const Value.absent(),
+    this.macroProtein = const Value.absent(),
+    this.macroCarbs = const Value.absent(),
+    this.macroFat = const Value.absent(),
   }) : sex = Value(sex),
        age = Value(age),
        heightCm = Value(heightCm),
@@ -1786,6 +1957,10 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     Expression<String>? activity,
     Expression<String>? goal,
     Expression<double>? customTargetKcal,
+    Expression<String>? macroMode,
+    Expression<double>? macroProtein,
+    Expression<double>? macroCarbs,
+    Expression<double>? macroFat,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1796,6 +1971,10 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
       if (activity != null) 'activity': activity,
       if (goal != null) 'goal': goal,
       if (customTargetKcal != null) 'custom_target_kcal': customTargetKcal,
+      if (macroMode != null) 'macro_mode': macroMode,
+      if (macroProtein != null) 'macro_protein': macroProtein,
+      if (macroCarbs != null) 'macro_carbs': macroCarbs,
+      if (macroFat != null) 'macro_fat': macroFat,
     });
   }
 
@@ -1808,6 +1987,10 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     Value<String>? activity,
     Value<String>? goal,
     Value<double?>? customTargetKcal,
+    Value<String>? macroMode,
+    Value<double?>? macroProtein,
+    Value<double?>? macroCarbs,
+    Value<double?>? macroFat,
   }) {
     return UserProfilesCompanion(
       id: id ?? this.id,
@@ -1818,6 +2001,10 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
       activity: activity ?? this.activity,
       goal: goal ?? this.goal,
       customTargetKcal: customTargetKcal ?? this.customTargetKcal,
+      macroMode: macroMode ?? this.macroMode,
+      macroProtein: macroProtein ?? this.macroProtein,
+      macroCarbs: macroCarbs ?? this.macroCarbs,
+      macroFat: macroFat ?? this.macroFat,
     );
   }
 
@@ -1848,6 +2035,18 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
     if (customTargetKcal.present) {
       map['custom_target_kcal'] = Variable<double>(customTargetKcal.value);
     }
+    if (macroMode.present) {
+      map['macro_mode'] = Variable<String>(macroMode.value);
+    }
+    if (macroProtein.present) {
+      map['macro_protein'] = Variable<double>(macroProtein.value);
+    }
+    if (macroCarbs.present) {
+      map['macro_carbs'] = Variable<double>(macroCarbs.value);
+    }
+    if (macroFat.present) {
+      map['macro_fat'] = Variable<double>(macroFat.value);
+    }
     return map;
   }
 
@@ -1861,7 +2060,11 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
           ..write('weightKg: $weightKg, ')
           ..write('activity: $activity, ')
           ..write('goal: $goal, ')
-          ..write('customTargetKcal: $customTargetKcal')
+          ..write('customTargetKcal: $customTargetKcal, ')
+          ..write('macroMode: $macroMode, ')
+          ..write('macroProtein: $macroProtein, ')
+          ..write('macroCarbs: $macroCarbs, ')
+          ..write('macroFat: $macroFat')
           ..write(')'))
         .toString();
   }
@@ -3989,6 +4192,10 @@ typedef $$UserProfilesTableCreateCompanionBuilder =
       required String activity,
       required String goal,
       Value<double?> customTargetKcal,
+      Value<String> macroMode,
+      Value<double?> macroProtein,
+      Value<double?> macroCarbs,
+      Value<double?> macroFat,
     });
 typedef $$UserProfilesTableUpdateCompanionBuilder =
     UserProfilesCompanion Function({
@@ -4000,6 +4207,10 @@ typedef $$UserProfilesTableUpdateCompanionBuilder =
       Value<String> activity,
       Value<String> goal,
       Value<double?> customTargetKcal,
+      Value<String> macroMode,
+      Value<double?> macroProtein,
+      Value<double?> macroCarbs,
+      Value<double?> macroFat,
     });
 
 class $$UserProfilesTableFilterComposer
@@ -4048,6 +4259,26 @@ class $$UserProfilesTableFilterComposer
 
   ColumnFilters<double> get customTargetKcal => $composableBuilder(
     column: $table.customTargetKcal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get macroMode => $composableBuilder(
+    column: $table.macroMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get macroProtein => $composableBuilder(
+    column: $table.macroProtein,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get macroCarbs => $composableBuilder(
+    column: $table.macroCarbs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get macroFat => $composableBuilder(
+    column: $table.macroFat,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -4100,6 +4331,26 @@ class $$UserProfilesTableOrderingComposer
     column: $table.customTargetKcal,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get macroMode => $composableBuilder(
+    column: $table.macroMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get macroProtein => $composableBuilder(
+    column: $table.macroProtein,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get macroCarbs => $composableBuilder(
+    column: $table.macroCarbs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get macroFat => $composableBuilder(
+    column: $table.macroFat,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserProfilesTableAnnotationComposer
@@ -4136,6 +4387,22 @@ class $$UserProfilesTableAnnotationComposer
     column: $table.customTargetKcal,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get macroMode =>
+      $composableBuilder(column: $table.macroMode, builder: (column) => column);
+
+  GeneratedColumn<double> get macroProtein => $composableBuilder(
+    column: $table.macroProtein,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get macroCarbs => $composableBuilder(
+    column: $table.macroCarbs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get macroFat =>
+      $composableBuilder(column: $table.macroFat, builder: (column) => column);
 }
 
 class $$UserProfilesTableTableManager
@@ -4177,6 +4444,10 @@ class $$UserProfilesTableTableManager
                 Value<String> activity = const Value.absent(),
                 Value<String> goal = const Value.absent(),
                 Value<double?> customTargetKcal = const Value.absent(),
+                Value<String> macroMode = const Value.absent(),
+                Value<double?> macroProtein = const Value.absent(),
+                Value<double?> macroCarbs = const Value.absent(),
+                Value<double?> macroFat = const Value.absent(),
               }) => UserProfilesCompanion(
                 id: id,
                 sex: sex,
@@ -4186,6 +4457,10 @@ class $$UserProfilesTableTableManager
                 activity: activity,
                 goal: goal,
                 customTargetKcal: customTargetKcal,
+                macroMode: macroMode,
+                macroProtein: macroProtein,
+                macroCarbs: macroCarbs,
+                macroFat: macroFat,
               ),
           createCompanionCallback:
               ({
@@ -4197,6 +4472,10 @@ class $$UserProfilesTableTableManager
                 required String activity,
                 required String goal,
                 Value<double?> customTargetKcal = const Value.absent(),
+                Value<String> macroMode = const Value.absent(),
+                Value<double?> macroProtein = const Value.absent(),
+                Value<double?> macroCarbs = const Value.absent(),
+                Value<double?> macroFat = const Value.absent(),
               }) => UserProfilesCompanion.insert(
                 id: id,
                 sex: sex,
@@ -4206,6 +4485,10 @@ class $$UserProfilesTableTableManager
                 activity: activity,
                 goal: goal,
                 customTargetKcal: customTargetKcal,
+                macroMode: macroMode,
+                macroProtein: macroProtein,
+                macroCarbs: macroCarbs,
+                macroFat: macroFat,
               ),
           withReferenceMapper: (p0) => p0
               .map(
