@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mizan/core/domain/meal.dart';
-import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/core/formatting/amount_format.dart';
 import 'package:mizan/features/diary/data/diary_repository.dart';
-import 'package:mizan/features/diary/domain/diary_item.dart';
 import 'package:mizan/features/diary/presentation/add_entry_dialog.dart';
+import 'package:mizan/features/diary/presentation/add_water_sheet.dart';
 import 'package:mizan/features/diary/presentation/diary_providers.dart';
 import 'package:mizan/features/diary/presentation/meal_labels.dart';
+import 'package:mizan/features/diary/presentation/widgets/day_rings_card.dart';
+import 'package:mizan/features/diary/presentation/widgets/diary_section.dart';
+import 'package:mizan/features/exercise/data/exercise_repository.dart';
+import 'package:mizan/features/exercise/presentation/add_exercise_dialog.dart';
+import 'package:mizan/features/exercise/presentation/exercise_labels.dart';
 import 'package:mizan/features/foods/presentation/food_search_screen.dart';
 
 class DiaryScreen extends ConsumerWidget {
@@ -24,25 +28,9 @@ class DiaryScreen extends ConsumerWidget {
     if (picked != null) ref.read(selectedDayProvider.notifier).select(picked);
   }
 
-  void _addFood(BuildContext context) {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (_) => FoodSearchScreen(
-          autofocus: true,
-          onFoodSelected: (context, food) async {
-            final added = await showAddEntryDialog(context, food);
-            if (added && context.mounted) Navigator.of(context).pop();
-          },
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final day = ref.watch(selectedDayProvider);
-    final entries = ref.watch(dayEntriesProvider).value ?? const [];
-    final totals = ref.watch(dayTotalsProvider).value ?? const {};
     final isToday = DateUtils.isSameDay(day, DateTime.now());
 
     return Scaffold(
@@ -69,109 +57,120 @@ class DiaryScreen extends ConsumerWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.only(bottom: 88),
-        children: [
-          _SummaryCard(totals: totals),
-          for (final meal in Meal.values)
-            _MealSection(
-              meal: meal,
-              items: entries.where((e) => e.meal == meal).toList(),
-            ),
+        padding: const EdgeInsets.only(bottom: 24),
+        children: const [
+          DayRingsCard(),
+          _MealSection(Meal.breakfast),
+          _MealSection(Meal.lunch),
+          _MealSection(Meal.dinner),
+          _WaterSection(),
+          _MealSection(Meal.snacks),
+          _MealSection(Meal.other),
+          _ExerciseSection(),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: const Icon(Icons.add),
-        label: const Text('Add food'),
-        onPressed: () => _addFood(context),
-      ),
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.totals});
-
-  final Map<String, double> totals;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    Widget macro(String label, String code) => Column(
-      children: [
-        Text('${formatAmount(totals[code] ?? 0)} g', style: text.titleMedium),
-        Text(label, style: text.bodySmall),
-      ],
-    );
-
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Text(
-              '${(totals[NutrientCodes.energy] ?? 0).round()} kcal',
-              style: text.headlineMedium,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                macro('Protein', NutrientCodes.protein),
-                macro('Carbs', NutrientCodes.carbs),
-                macro('Fat', NutrientCodes.fat),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }
 }
 
 class _MealSection extends ConsumerWidget {
-  const _MealSection({required this.meal, required this.items});
+  const _MealSection(this.meal);
 
   final Meal meal;
-  final List<DiaryItem> items;
+
+  void _addFood(BuildContext context) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => FoodSearchScreen(
+          autofocus: true,
+          onFoodSelected: (context, food) async {
+            final added = await showAddEntryDialog(context, food, meal: meal);
+            if (added && context.mounted) Navigator.of(context).pop();
+          },
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final entries = ref.watch(dayEntriesProvider).value ?? const [];
+    final items = [
+      for (final e in entries)
+        if (e.meal == meal) e,
+    ];
     final kcal = items.fold<double>(0, (sum, e) => sum + (e.kcal ?? 0));
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+
+    return DiarySection(
+      title: meal.label,
+      summary: '${kcal.round()} kcal',
+      addTooltip: 'Add food to ${meal.label.toLowerCase()}',
+      onAdd: () => _addFood(context),
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(meal.label, style: Theme.of(context).textTheme.titleMedium),
-              Text('${kcal.round()} kcal'),
-            ],
-          ),
-        ),
         for (final item in items)
-          Dismissible(
-            key: ValueKey(item.entryId),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              color: Theme.of(context).colorScheme.errorContainer,
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 16),
-              child: const Icon(Icons.delete),
-            ),
-            onDismissed: (_) =>
+          DiaryEntryTile(
+            entryKey: item.entryId,
+            title: item.foodName,
+            subtitle: '${formatAmount(item.grams)} g',
+            trailing: item.kcal == null ? '—' : '${item.kcal!.round()} kcal',
+            onDelete: () =>
                 ref.read(diaryRepositoryProvider).deleteEntry(item.entryId),
-            child: ListTile(
-              title: Text(item.foodName),
-              subtitle: Text('${formatAmount(item.grams)} g'),
-              trailing: Text(
-                item.kcal == null ? '—' : '${item.kcal!.round()} kcal',
-              ),
-            ),
           ),
-        const Divider(height: 1),
+      ],
+    );
+  }
+}
+
+class _WaterSection extends ConsumerWidget {
+  const _WaterSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final entries = ref.watch(dayWaterProvider).value ?? const [];
+    final total = entries.fold<double>(0, (sum, e) => sum + e.ml);
+
+    return DiarySection(
+      title: 'Water',
+      summary: '${total.round()} ml',
+      addTooltip: 'Add water',
+      onAdd: () => showAddWaterSheet(context, ref.read(selectedDayProvider)),
+      children: [
+        for (final entry in entries)
+          DiaryEntryTile(
+            entryKey: entry.id,
+            title: '${entry.ml.round()} ml',
+            onDelete: () =>
+                ref.read(diaryRepositoryProvider).deleteWater(entry.id),
+          ),
+      ],
+    );
+  }
+}
+
+class _ExerciseSection extends ConsumerWidget {
+  const _ExerciseSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final entries = ref.watch(dayExercisesProvider).value ?? const [];
+    final total = entries.fold<double>(0, (sum, e) => sum + e.kcal);
+
+    return DiarySection(
+      title: 'Exercise',
+      summary: '${total.round()} kcal',
+      addTooltip: 'Add exercise',
+      onAdd: () =>
+          showAddExerciseDialog(context, ref.read(selectedDayProvider)),
+      children: [
+        for (final entry in entries)
+          DiaryEntryTile(
+            entryKey: entry.id,
+            title: entry.type.label,
+            subtitle: '${formatAmount(entry.minutes)} min',
+            trailing: '${entry.kcal.round()} kcal',
+            onDelete: () =>
+                ref.read(exerciseRepositoryProvider).deleteEntry(entry.id),
+          ),
       ],
     );
   }

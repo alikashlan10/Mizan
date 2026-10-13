@@ -6,5 +6,6 @@ extension MealLabel on Meal {
     Meal.lunch => 'Lunch',
     Meal.dinner => 'Dinner',
     Meal.snacks => 'Snacks',
+    Meal.other => 'Other',
   };
 }

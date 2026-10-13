@@ -67,6 +67,10 @@ it in navigation and in the data model.
 | 2026-10-13 | Calorie calculator: resting calories by Mifflin-St Jeor; maintenance = resting × activity factor (sedentary 1.2, light 1.375, moderate 1.55, very active 1.725, extra active 1.9); target = maintenance + goal offset (extreme cut −750, medium cut −500, light cut −250, maintain 0, light gain +250, medium gain +500 kcal). | Standard, widely used formula and factors. |
 | 2026-10-13 | A calculated target is never below 1,200 kcal; the user can override the target by hand with any value. | An extreme cut on a small, sedentary person would otherwise produce an unsafe figure. |
 | 2026-10-13 | Exercise intensity factors: walking 3.5, running 9.8; a weight-lifting session counts as 60 minutes at 3.5. Calories = factor × body weight (kg) × hours. | Standard MET values; not yet implemented. |
+| 2026-10-13 | Diary charts are rings. Intake is split by the calories from protein, carbs and fat (4 / 4 / 9 kcal per gram). Expenditure is resting + everyday activity + logged exercise. Remaining is a meter of intake against the budget. | Rings leave room for the headline number in the middle; a two-slice pie is a poor way to show progress, so Remaining is a meter. |
+| 2026-10-13 | Budget = calorie target + exercise calories; remaining = budget − intake. | Exercise earns extra food for the day. Risk: the activity level may already include regular exercise, which would count it twice. Revisit when phase 2 workouts arrive. |
+| 2026-10-13 | Diary sections, in order: Breakfast, Lunch, Dinner, Water, Snacks, Other, Exercise. Each has its own plus button; exercise is its own section rather than an option under every meal. | Exercise does not belong to a meal. |
+| 2026-10-13 | An exercise entry stores its calories when logged. | Changing body weight later must not rewrite past days. |
 | 2026-10-13 | Custom meals are recipes: several foods with amounts, nutrition computed from them. Custom foods keep manual entry of nutrition facts. | Avoids retyping facts for meals built from known foods. |
 
 ### Technical
@@ -126,6 +130,47 @@ Rules:
 - Drift row classes (`Food`, `Nutrient`) are used directly as models until a
   feature needs something they cannot express.
 
+### Visual style
+
+Decided 2026-10-13: a single dark theme in blue shades with white text.
+
+Every colour is defined once in `lib/core/theme/app_colors.dart`, and the
+theme in `lib/core/theme/app_theme.dart` is built from it. Widgets never
+hard-code a colour. To restyle the app, change the value there and update
+this table.
+
+| Token | Hex | Used for |
+|---|---|---|
+| `background` | `#0A1222` | Page background, app bar |
+| `surface` | `#101B30` | Navigation bar |
+| `surfaceRaised` | `#16243D` | Cards, dialogs, bottom sheets |
+| `outline` | `#263654` | Dividers, borders, empty chart track |
+| `primary` | `#3B82F6` | Buttons, links, the Remaining ring |
+| `primaryBright` | `#60A5FA` | Accents |
+| `primaryMuted` | `#1D3A6B` | Selected navigation item, selected segments |
+| `textPrimary` | `#FFFFFF` | Main text |
+| `textSecondary` | `#B4C2DA` | Supporting text, labels |
+| `textMuted` | `#7F8FAB` | Hints, field borders |
+| `good` | `#0CA30C` | Positive state |
+| `warning` | `#FAB219` | Warning state |
+| `critical` | `#E66767` | Errors, over-budget |
+| `chartProtein` | `#3987E5` | Protein |
+| `chartCarbs` | `#D95926` | Carbohydrates |
+| `chartFat` | `#199E70` | Fat |
+| `chartResting` | `#C98500` | Resting calories |
+| `chartActivity` | `#D55181` | Everyday activity calories |
+| `chartExercise` | `#9085E9` | Exercise calories |
+
+Chart rules:
+
+- The two chart trios (macros; expenditure parts) were checked for
+  colour-blind separation and for contrast against `surfaceRaised`. Re-check
+  before changing any of them.
+- Status colours are reserved for state and never used as a series colour.
+- A colour always means the same thing: protein is blue on every screen.
+- Numbers and labels stay in text colours; a coloured dot beside them carries
+  identity.
+
 ### Environment
 
 - Flutter SDK at `C:\src\flutter` (stable channel).
@@ -134,10 +179,11 @@ Rules:
 
 ## Current state
 
-Working prototype: bottom navigation (Diary, Foods and Profile work;
-Statistics is a placeholder), a profile with the calorie calculator (metric
-units only, not yet used by the Diary), diary for any day with a kcal and macro summary, four meal
-sections, food search over USDA and custom foods, and custom food creation
+Working prototype in the dark blue theme: bottom navigation (Diary, Foods
+and Profile work; Statistics is a placeholder), a profile with the calorie
+calculator (metric units only), and a diary for any day with intake,
+expenditure and remaining rings, five food sections, water logging and
+exercise logging. Also: food search over USDA and custom foods, and custom food creation
 with 8 nutrients (energy, protein, carbs, fat, fiber, sugars, saturated fat,
 sodium).
 

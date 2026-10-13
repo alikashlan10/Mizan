@@ -47,6 +47,32 @@ class UserProfiles extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('WaterEntryRow')
+class WaterEntries extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Local calendar day; see `dayKey`.
+  TextColumn get day => text()();
+  RealColumn get ml => real()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DataClassName('ExerciseEntryRow')
+class ExerciseEntries extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Local calendar day; see `dayKey`.
+  TextColumn get day => text()();
+
+  /// Name of the exercise type.
+  TextColumn get type => text()();
+  RealColumn get minutes => real()();
+
+  /// Calories burned, fixed when the entry was logged.
+  RealColumn get kcal => real()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
 @TableIndex(name: 'diary_entries_day', columns: {#day})
 class DiaryEntries extends Table {
   IntColumn get id => integer().autoIncrement()();

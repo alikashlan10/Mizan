@@ -7,19 +7,24 @@ import 'package:mizan/features/diary/presentation/diary_providers.dart';
 import 'package:mizan/features/diary/presentation/meal_labels.dart';
 
 /// Asks for an amount and meal, then logs [food] on the selected day.
-/// Returns whether an entry was added.
-Future<bool> showAddEntryDialog(BuildContext context, Food food) async {
+/// [meal] is the section offered first. Returns whether an entry was added.
+Future<bool> showAddEntryDialog(
+  BuildContext context,
+  Food food, {
+  Meal meal = Meal.breakfast,
+}) async {
   final added = await showDialog<bool>(
     context: context,
-    builder: (_) => _AddEntryDialog(food: food),
+    builder: (_) => _AddEntryDialog(food: food, meal: meal),
   );
   return added ?? false;
 }
 
 class _AddEntryDialog extends ConsumerStatefulWidget {
-  const _AddEntryDialog({required this.food});
+  const _AddEntryDialog({required this.food, required this.meal});
 
   final Food food;
+  final Meal meal;
 
   @override
   ConsumerState<_AddEntryDialog> createState() => _AddEntryDialogState();
@@ -27,7 +32,7 @@ class _AddEntryDialog extends ConsumerStatefulWidget {
 
 class _AddEntryDialogState extends ConsumerState<_AddEntryDialog> {
   final _grams = TextEditingController(text: '100');
-  Meal _meal = Meal.breakfast;
+  late Meal _meal = widget.meal;
 
   @override
   void dispose() {

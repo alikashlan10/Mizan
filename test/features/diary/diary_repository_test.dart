@@ -71,6 +71,20 @@ void main() {
     expect(items.last.meal, Meal.lunch);
   });
 
+  test('water is listed for its day and can be deleted', () async {
+    final glass = await diary.addWater(day: today, ml: 250);
+    await diary.addWater(day: today, ml: 500);
+    await diary.addWater(day: tomorrow, ml: 330);
+
+    expect((await diary.watchDayWater(today).first).map((w) => w.ml), [
+      250,
+      500,
+    ]);
+
+    await diary.deleteWater(glass);
+    expect((await diary.watchDayWater(today).first).single.ml, 500);
+  });
+
   test('deleting an entry removes it from the day', () async {
     final rice = await createFood('Rice', {NutrientCodes.energy: 130});
     final entry = await diary.addEntry(

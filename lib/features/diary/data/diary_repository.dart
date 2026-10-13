@@ -6,6 +6,7 @@ import 'package:mizan/core/database/day_key.dart';
 import 'package:mizan/core/domain/meal.dart';
 import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/features/diary/domain/diary_item.dart';
+import 'package:mizan/features/diary/domain/water_entry.dart';
 
 final diaryRepositoryProvider = Provider<DiaryRepository>(
   (ref) => DiaryRepository(ref.watch(appDatabaseProvider)),
@@ -68,6 +69,25 @@ class DiaryRepository {
               ),
           ],
         );
+  }
+
+  Future<int> addWater({required DateTime day, required double ml}) => _db
+      .into(_db.waterEntries)
+      .insert(WaterEntriesCompanion.insert(day: dayKey(day), ml: ml));
+
+  Future<void> deleteWater(int id) =>
+      (_db.delete(_db.waterEntries)..where((w) => w.id.equals(id))).go();
+
+  Stream<List<WaterEntry>> watchDayWater(DateTime day) {
+    final query = _db.select(_db.waterEntries)
+      ..where((w) => w.day.equals(dayKey(day)))
+      ..orderBy([
+        (w) => OrderingTerm(expression: w.createdAt),
+        (w) => OrderingTerm(expression: w.id),
+      ]);
+    return query.watch().map(
+      (rows) => [for (final r in rows) WaterEntry(id: r.id, ml: r.ml)],
+    );
   }
 
   /// Total intake for [day], keyed by nutrient code.

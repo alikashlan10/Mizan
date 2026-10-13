@@ -20,7 +20,15 @@ const _coreNutrients = [
 /// The single local database. Only repositories may use it; everything else
 /// goes through a repository.
 @DriftDatabase(
-  tables: [Nutrients, Foods, FoodNutrients, DiaryEntries, UserProfiles],
+  tables: [
+    Nutrients,
+    Foods,
+    FoodNutrients,
+    DiaryEntries,
+    UserProfiles,
+    WaterEntries,
+    ExerciseEntries,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
@@ -38,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -60,6 +68,10 @@ class AppDatabase extends _$AppDatabase {
     // Add one step per schema version; never edit a step that has shipped.
     onUpgrade: (m, from, to) async {
       if (from < 2) await m.createTable(userProfiles);
+      if (from < 3) {
+        await m.createTable(waterEntries);
+        await m.createTable(exerciseEntries);
+      }
     },
     beforeOpen: (_) => customStatement('PRAGMA foreign_keys = ON'),
   );
