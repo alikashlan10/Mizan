@@ -2,9 +2,11 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/database/app_database.dart';
 import 'package:mizan/core/database/database_provider.dart';
+import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/features/foods/domain/food_nutrient_amount.dart';
 import 'package:mizan/features/foods/domain/food_serving.dart';
 import 'package:mizan/features/foods/domain/food_sources.dart';
+import 'package:mizan/features/foods/domain/meal_ingredient.dart';
 import 'package:mizan/features/foods/domain/seed_food.dart';
 
 final foodRepositoryProvider = Provider<FoodRepository>(
@@ -31,6 +33,7 @@ class FoodRepository {
         (f) => OrderingTerm(expression: f.name),
       ])
       ..limit(50);
+    q.where((f) => f.deletedAt.isNull());
     if (source != null) q.where((f) => f.source.equals(source));
     for (final word in query.trim().split(RegExp(r'\s+'))) {
       if (word.isEmpty) continue;
@@ -60,7 +63,8 @@ class FoodRepository {
   /// The datasets that currently have foods, in display order.
   Stream<List<String>> watchSources() {
     final q = _db.selectOnly(_db.foods, distinct: true)
-      ..addColumns([_db.foods.source]);
+      ..addColumns([_db.foods.source])
+      ..where(_db.foods.deletedAt.isNull());
     return q.watch().map(
       (rows) =>
           [for (final r in rows) r.read(_db.foods.source)!]
@@ -178,24 +182,180 @@ class FoodRepository {
   }
 
   /// [amountsPer100g] is keyed by nutrient id.
-  Future<int> createCustomFood(String name, Map<int, double> amountsPer100g) {
+  Future<int> createCustomFood(
+    String name,
+    Map<int, double> amountsPer100g, {
+    List<ServingDraft> servings = const [],
+  }) {
     return _db.transaction(() async {
       final foodId = await _db
           .into(_db.foods)
           .insert(
             FoodsCompanion.insert(name: name, source: FoodSources.custom),
           );
+      await _replaceNutrients(foodId, amountsPer100g);
+      await _replaceServings(foodId, servings);
+      return foodId;
+    });
+  }
+
+  /// Replaces the name, nutrition facts and servings of a custom food.
+  /// [amountsPer100g] is keyed by nutrient id.
+  Future<void> updateCustomFood(
+    int foodId,
+    String name,
+    Map<int, double> amountsPer100g, {
+    List<ServingDraft> servings = const [],
+  }) {
+    return _db.transaction(() async {
+      await _rename(foodId, name);
+      await _replaceNutrients(foodId, amountsPer100g);
+      await _replaceServings(foodId, servings);
+    });
+  }
+
+  /// Creates a meal from [ingredients], or replaces the one with [id]. The
+  /// meal is itself a food: its nutrition facts per 100 g are worked out from
+  /// the ingredients at this moment, and it gets a "1 meal" serving weighing
+  /// the whole recipe. Later changes to an ingredient do not flow through
+  /// until the meal is saved again.
+  Future<int> saveMeal({
+    required String name,
+    required List<MealIngredient> ingredients,
+    int? id,
+  }) {
+    return _db.transaction(() async {
+      final mealId =
+          id ??
+          await _db
+              .into(_db.foods)
+              .insert(
+                FoodsCompanion.insert(name: name, source: FoodSources.meal),
+              );
+      if (id != null) await _rename(id, name);
+
+      await (_db.delete(
+        _db.recipeIngredients,
+      )..where((r) => r.recipeId.equals(mealId))).go();
       await _db.batch((b) {
-        b.insertAll(_db.foodNutrients, [
-          for (final e in amountsPer100g.entries)
-            FoodNutrientsCompanion.insert(
-              foodId: foodId,
-              nutrientId: e.key,
-              amount: e.value,
+        b.insertAll(_db.recipeIngredients, [
+          for (final (i, ingredient) in ingredients.indexed)
+            RecipeIngredientsCompanion.insert(
+              recipeId: mealId,
+              ingredientId: ingredient.foodId,
+              grams: ingredient.grams,
+              sortOrder: i,
             ),
         ]);
       });
-      return foodId;
+
+      final facts =
+          await (_db.select(_db.foodNutrients)..where(
+                (n) => n.foodId.isIn({for (final i in ingredients) i.foodId}),
+              ))
+              .get();
+      final totalGrams = ingredients.fold<double>(0, (sum, i) => sum + i.grams);
+      final totals = <int, double>{};
+      for (final ingredient in ingredients) {
+        for (final fact in facts) {
+          if (fact.foodId != ingredient.foodId) continue;
+          totals[fact.nutrientId] =
+              (totals[fact.nutrientId] ?? 0) +
+              fact.amount * ingredient.grams / 100;
+        }
+      }
+      await _replaceNutrients(mealId, {
+        if (totalGrams > 0)
+          for (final e in totals.entries) e.key: e.value / totalGrams * 100,
+      });
+      await _replaceServings(mealId, [
+        if (totalGrams > 0) ServingDraft(label: '1 meal', grams: totalGrams),
+      ]);
+      return mealId;
+    });
+  }
+
+  /// The ingredients of a meal, in the order they were added.
+  Future<List<MealIngredient>> mealIngredients(int mealId) async {
+    final rows = await _db
+        .customSelect(
+          'SELECT r.ingredient_id, r.grams, f.name, '
+          '(SELECT fn.amount FROM food_nutrients fn '
+          'JOIN nutrients n ON n.id = fn.nutrient_id '
+          'WHERE fn.food_id = r.ingredient_id AND n.code = ?) AS kcal '
+          'FROM recipe_ingredients r JOIN foods f ON f.id = r.ingredient_id '
+          'WHERE r.recipe_id = ? ORDER BY r.sort_order, r.id',
+          variables: [
+            Variable.withString(NutrientCodes.energy),
+            Variable.withInt(mealId),
+          ],
+        )
+        .get();
+    return [
+      for (final r in rows)
+        MealIngredient(
+          foodId: r.read<int>('ingredient_id'),
+          name: r.read<String>('name'),
+          grams: r.read<double>('grams'),
+          kcalPer100g: r.readNullable<double>('kcal'),
+        ),
+    ];
+  }
+
+  /// Energy per 100 g of a food, or null when none is recorded.
+  Future<double?> energyPer100g(int foodId) async {
+    for (final fact in await nutrientsOf(foodId)) {
+      if (fact.code == NutrientCodes.energy) return fact.amountPer100g;
+    }
+    return null;
+  }
+
+  /// Hides a custom food or meal from search. The row is kept, so diary
+  /// entries and meals that already use it stay intact.
+  Future<void> deleteFood(int foodId) =>
+      (_db.update(_db.foods)..where(
+            (f) => f.id.equals(foodId) & f.source.isIn(FoodSources.userCreated),
+          ))
+          .write(FoodsCompanion(deletedAt: Value(DateTime.now())));
+
+  Future<void> _rename(int foodId, String name) =>
+      (_db.update(_db.foods)..where((f) => f.id.equals(foodId))).write(
+        FoodsCompanion(name: Value(name)),
+      );
+
+  Future<void> _replaceNutrients(
+    int foodId,
+    Map<int, double> amountsPer100g,
+  ) async {
+    await (_db.delete(
+      _db.foodNutrients,
+    )..where((n) => n.foodId.equals(foodId))).go();
+    await _db.batch((b) {
+      b.insertAll(_db.foodNutrients, [
+        for (final e in amountsPer100g.entries)
+          FoodNutrientsCompanion.insert(
+            foodId: foodId,
+            nutrientId: e.key,
+            amount: e.value,
+          ),
+      ]);
+    });
+  }
+
+  Future<void> _replaceServings(int foodId, List<ServingDraft> servings) async {
+    await (_db.delete(
+      _db.foodServings,
+    )..where((s) => s.foodId.equals(foodId))).go();
+    await _db.batch((b) {
+      b.insertAll(_db.foodServings, [
+        for (final (i, serving) in servings.indexed)
+          FoodServingsCompanion.insert(
+            foodId: foodId,
+            label: serving.label,
+            grams: serving.grams,
+            sortOrder: i,
+          ),
+      ]);
     });
   }
 }

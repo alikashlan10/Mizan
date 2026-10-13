@@ -6,12 +6,16 @@ import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/core/formatting/amount_format.dart';
 import 'package:mizan/core/theme/app_colors.dart';
 import 'package:mizan/core/widgets/stacked_bar.dart';
+import 'package:mizan/features/foods/data/food_repository.dart';
 import 'package:mizan/features/foods/domain/daily_targets.dart';
 import 'package:mizan/features/foods/domain/daily_values.dart';
 import 'package:mizan/features/foods/domain/food_nutrient_amount.dart';
 import 'package:mizan/features/foods/domain/food_serving.dart';
 import 'package:mizan/features/foods/domain/food_sources.dart';
+import 'package:mizan/features/foods/domain/meal_ingredient.dart';
+import 'package:mizan/features/foods/presentation/food_form_screen.dart';
 import 'package:mizan/features/foods/presentation/food_providers.dart';
+import 'package:mizan/features/foods/presentation/meal_form_screen.dart';
 import 'package:mizan/features/foods/presentation/widgets/food_amount_field.dart';
 
 /// A food's nutrition facts for an amount the user can change, each measured
@@ -39,6 +43,46 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   /// Null while the amount field does not hold a valid number.
   FoodAmount? _amount = const FoodAmount.grams(100);
 
+  /// Opens the form for this food or meal. This screen closes afterwards,
+  /// because it would otherwise keep showing the values from before the edit.
+  Future<void> _edit() async {
+    final food = widget.food;
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => food.source == FoodSources.meal
+            ? MealFormScreen(meal: food)
+            : FoodFormScreen(food: food),
+      ),
+    );
+    if (saved == true && mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _delete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete ${widget.food.name}?'),
+        content: const Text(
+          'It will no longer appear in search. Diary entries and meals that '
+          'already use it are kept.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(foodRepositoryProvider).deleteFood(widget.food.id);
+    if (mounted) Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -59,8 +103,31 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       return null;
     }
 
+    final food = widget.food;
+    final isUserCreated = FoodSources.userCreated.contains(food.source);
+    final isMeal = food.source == FoodSources.meal;
+    final ingredients = isMeal
+        ? ref.watch(mealIngredientsProvider(food.id)).value
+        : null;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Nutrition facts')),
+      appBar: AppBar(
+        title: const Text('Nutrition facts'),
+        actions: [
+          if (isUserCreated) ...[
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit',
+              onPressed: _edit,
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Delete',
+              onPressed: _delete,
+            ),
+          ],
+        ],
+      ),
       bottomNavigationBar: onAddToDiary == null
           ? null
           : SafeArea(
@@ -151,6 +218,10 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                 ),
               ],
             ),
+            if (ingredients != null && ingredients.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _IngredientsCard(ingredients: ingredients),
+            ],
             const SizedBox(height: 12),
             Text(
               targets.isPersonal
@@ -265,6 +336,49 @@ class _EnergyCard extends StatelessWidget {
                   ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// What a meal is made of.
+class _IngredientsCard extends StatelessWidget {
+  const _IngredientsCard({required this.ingredients});
+
+  final List<MealIngredient> ingredients;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodyMedium?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Ingredients', style: theme.textTheme.titleSmall),
+            for (final ingredient in ingredients) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      ingredient.name,
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('${formatAmount(ingredient.grams)} g', style: muted),
+                ],
+              ),
+            ],
           ],
         ),
       ),

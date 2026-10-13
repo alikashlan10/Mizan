@@ -19,6 +19,21 @@ class Foods extends Table {
   /// Dataset the food came from; see `FoodSources`.
   TextColumn get source => text()();
   TextColumn get sourceId => text().nullable()();
+
+  /// Set when the user deletes the food. The row stays so that diary entries
+  /// and meals using it keep working; it is only hidden from search.
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+}
+
+/// One ingredient of a meal. Both sides are foods: the meal itself and the
+/// food that goes into it.
+class RecipeIngredients extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get recipeId =>
+      integer().references(Foods, #id, onDelete: KeyAction.cascade)();
+  IntColumn get ingredientId => integer().references(Foods, #id)();
+  RealColumn get grams => real()();
+  IntColumn get sortOrder => integer()();
 }
 
 /// Nutrient amounts are stored per 100 g of food, in the nutrient's unit.

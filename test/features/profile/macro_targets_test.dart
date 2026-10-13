@@ -1,6 +1,4 @@
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mizan/core/database/app_database.dart';
 import 'package:mizan/features/profile/data/profile_repository.dart';
 import 'package:mizan/features/profile/domain/macro_targets.dart';
 import 'package:mizan/features/profile/domain/profile.dart';
@@ -73,16 +71,12 @@ void main() {
   test(
     'a version 3 profile keeps its data and gains standard macros',
     () async {
-      final db = AppDatabase(
-        NativeDatabase.memory(
-          setup: (raw) => raw
-            ..execute(userProfilesV2Sql)
-            ..execute(
-              'INSERT INTO user_profiles VALUES '
+      final db = openDatabaseAtVersion(
+        3,
+        rows: [
+          'INSERT INTO user_profiles VALUES '
               "(1, 'female', 28, 165, 60, 'light', 'maintain', NULL)",
-            )
-            ..execute('PRAGMA user_version = 3'),
-        ),
+        ],
       );
       addTearDown(db.close);
 

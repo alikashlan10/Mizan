@@ -5,6 +5,7 @@ import 'package:mizan/features/foods/data/food_repository.dart';
 import 'package:mizan/features/foods/data/food_seed.dart';
 import 'package:mizan/features/foods/domain/food_nutrient_amount.dart';
 import 'package:mizan/features/foods/domain/food_serving.dart';
+import 'package:mizan/features/foods/domain/meal_ingredient.dart';
 
 /// Completes once the bundled food datasets are in the database.
 final foodSeedProvider = FutureProvider<void>((ref) async {
@@ -43,6 +44,13 @@ final foodServingsProvider = FutureProvider.autoDispose
       ref.watch(foodSeedProvider);
       return ref.watch(foodRepositoryProvider).servingsOf(foodId);
     });
+
+/// The ingredients of the meal with the given food id.
+final mealIngredientsProvider = FutureProvider.autoDispose
+    .family<List<MealIngredient>, int>(
+      (ref, mealId) =>
+          ref.watch(foodRepositoryProvider).mealIngredients(mealId),
+    );
 
 /// The nutrition facts of the food with the given id.
 final foodNutrientsProvider = FutureProvider.autoDispose

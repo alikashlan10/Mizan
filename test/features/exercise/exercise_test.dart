@@ -1,6 +1,4 @@
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mizan/core/database/app_database.dart';
 import 'package:mizan/features/exercise/data/exercise_repository.dart';
 import 'package:mizan/features/exercise/domain/exercise.dart';
 
@@ -58,13 +56,7 @@ void main() {
   });
 
   test('a version 2 database gains the exercise table on upgrade', () async {
-    final db = AppDatabase(
-      NativeDatabase.memory(
-        setup: (raw) => raw
-          ..execute(userProfilesV2Sql)
-          ..execute('PRAGMA user_version = 2'),
-      ),
-    );
+    final db = openDatabaseAtVersion(2);
     addTearDown(db.close);
     final exercises = ExerciseRepository(db);
 

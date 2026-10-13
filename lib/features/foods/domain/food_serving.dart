@@ -11,6 +11,14 @@ class FoodServing {
   final double grams;
 }
 
+/// A serving size being created or edited, before it is saved.
+class ServingDraft {
+  const ServingDraft({required this.label, required this.grams});
+
+  final String label;
+  final double grams;
+}
+
 /// How much of a food: a number of [serving]s, or of grams when [serving] is
 /// null.
 class FoodAmount {

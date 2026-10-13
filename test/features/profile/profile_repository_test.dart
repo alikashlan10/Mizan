@@ -1,6 +1,4 @@
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mizan/core/database/app_database.dart';
 import 'package:mizan/features/profile/data/profile_repository.dart';
 import 'package:mizan/features/profile/domain/profile.dart';
 
@@ -52,11 +50,7 @@ void main() {
   });
 
   test('a version 1 database gains the profile table on upgrade', () async {
-    final db = AppDatabase(
-      NativeDatabase.memory(
-        setup: (raw) => raw.execute('PRAGMA user_version = 1'),
-      ),
-    );
+    final db = openDatabaseAtVersion(1);
     addTearDown(db.close);
     final profiles = ProfileRepository(db);
 

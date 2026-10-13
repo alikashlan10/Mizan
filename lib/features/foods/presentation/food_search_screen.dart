@@ -4,6 +4,7 @@ import 'package:mizan/core/database/app_database.dart';
 import 'package:mizan/features/foods/domain/food_sources.dart';
 import 'package:mizan/features/foods/presentation/food_form_screen.dart';
 import 'package:mizan/features/foods/presentation/food_providers.dart';
+import 'package:mizan/features/foods/presentation/meal_form_screen.dart';
 
 /// Searches foods and reports the one the user taps. What happens with the
 /// chosen food is up to the caller.
@@ -32,7 +33,12 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
 
   void _createFood() {
     Navigator.of(context)
-        .push<void>(MaterialPageRoute(builder: (_) => const FoodFormScreen()));
+        .push<bool>(MaterialPageRoute(builder: (_) => const FoodFormScreen()));
+  }
+
+  void _createMeal() {
+    Navigator.of(context)
+        .push<bool>(MaterialPageRoute(builder: (_) => const MealFormScreen()));
   }
 
   @override
@@ -76,10 +82,14 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
           onChanged: (query) => setState(() => _query = query),
         ),
         actions: [
-          IconButton(
+          PopupMenuButton<VoidCallback>(
             icon: const Icon(Icons.add),
-            tooltip: 'Create food',
-            onPressed: _createFood,
+            tooltip: 'Create',
+            onSelected: (create) => create(),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: _createFood, child: const Text('New food')),
+              PopupMenuItem(value: _createMeal, child: const Text('New meal')),
+            ],
           ),
         ],
       ),

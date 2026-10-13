@@ -65,6 +65,8 @@ class _FoodAmountFieldState extends ConsumerState<FoodAmountField> {
         : null;
 
     return Column(
+      // Only as tall as its content, so it does not stretch a dialog.
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
