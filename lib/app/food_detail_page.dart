@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/database/app_database.dart';
+import 'package:mizan/features/comparison/presentation/comparison_providers.dart';
+import 'package:mizan/features/comparison/presentation/comparison_screen.dart';
 import 'package:mizan/features/diary/presentation/add_entry_dialog.dart';
 import 'package:mizan/features/foods/domain/daily_targets.dart';
 import 'package:mizan/features/foods/presentation/food_detail_screen.dart';
@@ -30,6 +32,12 @@ class FoodDetailPage extends ConsumerWidget {
               fatG: macros.fat,
               isPersonal: true,
             ),
+      onCompare: (context) {
+        ref.read(comparedFoodsProvider.notifier).add(food);
+        Navigator.of(context).push<void>(
+          MaterialPageRoute(builder: (_) => const ComparisonScreen()),
+        );
+      },
       onAddToDiary: (context, amount) async {
         final added = await showAddEntryDialog(context, food, amount: amount);
         if (!added || !context.mounted) return;

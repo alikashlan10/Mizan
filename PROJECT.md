@@ -80,6 +80,8 @@ it in navigation and in the data model.
 | 2026-10-14 | A meal is stored as a food (source `meal`) plus its ingredient list. Its nutrition facts per 100 g are calculated from the ingredients when it is saved, and it gets a "1 meal" serving weighing the whole recipe. | Being a food, a meal can be searched, logged, compared and reused as an ingredient with no special cases. Trade-off: editing an ingredient later does not update the meal until the meal is saved again. |
 | 2026-10-14 | Deleting a custom food or meal only hides it from search (`deleted_at`); the row stays. Bundled foods cannot be deleted. | Diary history and meals that use the food must keep working. |
 | 2026-10-14 | Custom foods can have their own serving sizes, and custom foods and meals can be edited from their nutrition facts screen. | Same convenience as bundled foods. |
+| 2026-10-14 | Comparison holds two to four foods, matched either at the same weight or at the weights that supply the same amount of one chosen nutrient. Each nutrient is a card with one bar per food, scaled to the largest value; a food with none of the matched nutrient is shown as such. It opens from the Foods tab and from a food's nutrition facts. | Covers both "100 g of rice vs 100 g of pasta" and "10 g of carbs from each". Four is what fits a phone. |
+| 2026-10-14 | Compared foods are identified by letters (A, B, C, D) with single-colour bars, not by a colour per food. | The chart colours already mean protein, carbs, fat and the expenditure parts; reusing them for foods would break "a colour always means the same thing". |
 | 2026-10-13 | Custom meals are recipes: several foods with amounts, nutrition computed from them. Custom foods keep manual entry of nutrition facts. | Avoids retyping facts for meals built from known foods. |
 
 ### Technical
@@ -188,16 +190,28 @@ Chart rules:
 
 ## Current state
 
-Working prototype in the dark blue theme: bottom navigation (Diary, Foods
-and Profile work; Statistics is a placeholder), a profile with the calorie
-calculator (metric units only), and a diary for any day with intake,
-expenditure and remaining rings, five food sections, water logging and
-exercise logging. Also: food search over USDA and custom foods, and custom food creation
-with 8 nutrients (energy, protein, carbs, fat, fiber, sugars, saturated fat,
-sodium).
+As of 2026-10-14, in the dark blue theme with schema version 6:
+
+| Phase 1 page | State |
+|---|---|
+| Diary | Done: rings for intake, expenditure and remaining, macro target bars, five food sections, water and exercise logging. |
+| Foods | Done: search with source tabs (All, USDA, Custom, Meals), nutrition facts with daily-target bars, serving sizes. |
+| Customization | Done: custom foods with servings, meals built from foods, edit and delete. |
+| Comparison | Done: two to four foods by weight or by one nutrient. |
+| Personal settings | Done: calorie calculator and macro targets. Metric units only. |
+| Statistics | Not started; the tab is a placeholder. |
+
+Eight nutrients are tracked: energy, protein, carbohydrates, fat, fiber,
+sugars, saturated fat and sodium.
 
 ## Open questions
 
+- **Statistics page.** Date-range statistics in grams and percentages, plus
+  the expenditure and remaining breakdowns moved off the Diary.
+- **Servings in the diary.** Entries store grams only, so "1 tbsp" is shown
+  as "21 g".
+- **Exercise and the budget.** Exercise calories are added to what can be
+  eaten; this double counts if the activity level already includes them.
 - **Full nutrient list.** The prototype tracks 8 nutrients; the target is
   the full vitamin, mineral, amino acid and fatty acid set.
 - **Display options** for calories and amounts (kcal/kJ, g/oz, per 100 g or

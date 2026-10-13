@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/app/food_detail_page.dart';
+import 'package:mizan/features/comparison/presentation/comparison_screen.dart';
 import 'package:mizan/features/diary/presentation/diary_screen.dart';
 import 'package:mizan/features/foods/presentation/food_providers.dart';
 import 'package:mizan/features/foods/presentation/food_search_screen.dart';
@@ -30,6 +31,15 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         children: [
           const DiaryScreen(),
           FoodSearchScreen(
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.compare_arrows),
+                tooltip: 'Compare foods',
+                onPressed: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(builder: (_) => const ComparisonScreen()),
+                ),
+              ),
+            ],
             onFoodSelected: (context, food) => Navigator.of(context).push<void>(
               MaterialPageRoute(builder: (_) => FoodDetailPage(food: food)),
             ),

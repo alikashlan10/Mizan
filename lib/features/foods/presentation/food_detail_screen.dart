@@ -25,8 +25,12 @@ class FoodDetailScreen extends ConsumerStatefulWidget {
     required this.food,
     this.targets = const DailyTargets.reference(),
     this.onAddToDiary,
+    this.onCompare,
     super.key,
   });
+
+  /// Shows a "Compare" button when set.
+  final void Function(BuildContext context)? onCompare;
 
   final Food food;
   final DailyTargets targets;
@@ -114,6 +118,12 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       appBar: AppBar(
         title: const Text('Nutrition facts'),
         actions: [
+          if (widget.onCompare case final onCompare?)
+            IconButton(
+              icon: const Icon(Icons.compare_arrows),
+              tooltip: 'Compare with other foods',
+              onPressed: () => onCompare(context),
+            ),
           if (isUserCreated) ...[
             IconButton(
               icon: const Icon(Icons.edit_outlined),

@@ -12,11 +12,15 @@ class FoodSearchScreen extends ConsumerStatefulWidget {
   const FoodSearchScreen({
     required this.onFoodSelected,
     this.autofocus = false,
+    this.actions = const [],
     super.key,
   });
 
   final Future<void> Function(BuildContext context, Food food) onFoodSelected;
   final bool autofocus;
+
+  /// Extra app bar buttons, shown before the create menu.
+  final List<Widget> actions;
 
   @override
   ConsumerState<FoodSearchScreen> createState() => _FoodSearchScreenState();
@@ -82,6 +86,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
           onChanged: (query) => setState(() => _query = query),
         ),
         actions: [
+          ...widget.actions,
           PopupMenuButton<VoidCallback>(
             icon: const Icon(Icons.add),
             tooltip: 'Create',
