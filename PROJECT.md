@@ -88,7 +88,8 @@ it in navigation and in the data model.
 
 ## Current state
 
-Working prototype: diary for any day with a kcal and macro summary, four meal
+Working prototype: bottom navigation (Diary and Foods work; Statistics and
+Profile are placeholders), diary for any day with a kcal and macro summary, four meal
 sections, food search over USDA and custom foods, and custom food creation
 with 8 nutrients (energy, protein, carbs, fat, fiber, sugars, saturated fat,
 sodium).
