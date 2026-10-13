@@ -5,6 +5,7 @@ import 'package:mizan/core/database/app_database.dart';
 import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/features/foods/data/food_repository.dart';
 import 'package:mizan/features/foods/data/food_seed.dart';
+import 'package:mizan/features/foods/domain/food_serving.dart';
 import 'package:mizan/features/foods/domain/food_sources.dart';
 import 'package:mizan/features/foods/domain/seed_food.dart';
 
@@ -105,6 +106,62 @@ void main() {
     ]);
     expect(facts.first.unit, 'kcal');
     expect(facts.first.amountIn(250), 325);
+  });
+
+  test('servings are imported for foods that exist, in order', () async {
+    await foods.importFoods(FoodSources.usda, const [
+      SeedFood(sourceId: '10', name: 'Egg', amounts: {}),
+    ]);
+    expect(await foods.hasServingsFrom(FoodSources.usda), isFalse);
+
+    await foods.importServings(FoodSources.usda, const [
+      SeedServing(
+        foodSourceId: '10',
+        sortOrder: 2,
+        label: '1 jumbo',
+        grams: 63,
+      ),
+      SeedServing(
+        foodSourceId: '10',
+        sortOrder: 1,
+        label: '1 large',
+        grams: 50,
+      ),
+      SeedServing(foodSourceId: '99', sortOrder: 1, label: '1 cup', grams: 240),
+    ]);
+
+    expect(await foods.hasServingsFrom(FoodSources.usda), isTrue);
+    final egg = (await foods.watchSearch('egg').first).single;
+    final servings = await foods.servingsOf(egg.id);
+    expect(servings.map((s) => s.label), ['1 large', '1 jumbo']);
+    expect(servings.first.grams, 50);
+  });
+
+  test(
+    'servings are seeded once, even into an already seeded database',
+    () async {
+      await foods.importFoods(FoodSources.usda, const [
+        SeedFood(sourceId: '10', name: 'Egg', amounts: {}),
+      ]);
+      var loads = 0;
+      Future<String> load() async {
+        loads++;
+        return '10\t1\t1 large\t50\n10\t2\t1 cup (4.86 large eggs)\t243\n';
+      }
+
+      await seedServingsIfNeeded(foods, load);
+      await seedServingsIfNeeded(foods, load);
+
+      expect(loads, 1);
+      final egg = (await foods.watchSearch('egg').first).single;
+      expect(await foods.servingsOf(egg.id), hasLength(2));
+    },
+  );
+
+  test('an amount in servings converts to grams', () {
+    const large = FoodServing(id: 1, label: '1 large', grams: 50);
+    expect(const FoodAmount(quantity: 2, serving: large).grams, 100);
+    expect(const FoodAmount.grams(150).grams, 150);
   });
 
   test('search results update when a food is created', () async {

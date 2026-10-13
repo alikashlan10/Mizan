@@ -32,6 +32,17 @@ class FoodNutrients extends Table {
   Set<Column> get primaryKey => {foodId, nutrientId};
 }
 
+/// A named amount of a food, such as "1 cup, chopped" weighing 140 g.
+@DataClassName('FoodServingRow')
+class FoodServings extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get foodId =>
+      integer().references(Foods, #id, onDelete: KeyAction.cascade)();
+  TextColumn get label => text()();
+  RealColumn get grams => real()();
+  IntColumn get sortOrder => integer()();
+}
+
 /// The single user's details. Enum-like columns hold the enum value's name.
 class UserProfiles extends Table {
   IntColumn get id => integer()();

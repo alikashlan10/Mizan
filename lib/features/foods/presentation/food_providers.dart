@@ -4,12 +4,15 @@ import 'package:mizan/core/database/app_database.dart';
 import 'package:mizan/features/foods/data/food_repository.dart';
 import 'package:mizan/features/foods/data/food_seed.dart';
 import 'package:mizan/features/foods/domain/food_nutrient_amount.dart';
+import 'package:mizan/features/foods/domain/food_serving.dart';
 
 /// Completes once the bundled food datasets are in the database.
-final foodSeedProvider = FutureProvider<void>((ref) {
-  return seedFoodsIfNeeded(
-    ref.watch(foodRepositoryProvider),
-    () => rootBundle.loadString(usdaSeedAsset),
+final foodSeedProvider = FutureProvider<void>((ref) async {
+  final foods = ref.watch(foodRepositoryProvider);
+  await seedFoodsIfNeeded(foods, () => rootBundle.loadString(usdaSeedAsset));
+  await seedServingsIfNeeded(
+    foods,
+    () => rootBundle.loadString(usdaServingsAsset),
   );
 });
 
@@ -32,6 +35,14 @@ final foodSearchProvider = StreamProvider.autoDispose
           .watch(foodRepositoryProvider)
           .watchSearch(search.query, source: search.source),
     );
+
+/// The serving sizes of the food with the given id. Re-read once seeding
+/// finishes, since servings arrive after the foods.
+final foodServingsProvider = FutureProvider.autoDispose
+    .family<List<FoodServing>, int>((ref, foodId) {
+      ref.watch(foodSeedProvider);
+      return ref.watch(foodRepositoryProvider).servingsOf(foodId);
+    });
 
 /// The nutrition facts of the food with the given id.
 final foodNutrientsProvider = FutureProvider.autoDispose

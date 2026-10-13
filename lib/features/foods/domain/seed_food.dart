@@ -10,3 +10,18 @@ class SeedFood {
   final String name;
   final Map<String, double> amounts;
 }
+
+/// A serving size from a bundled dataset, for the food with [foodSourceId].
+class SeedServing {
+  const SeedServing({
+    required this.foodSourceId,
+    required this.sortOrder,
+    required this.label,
+    required this.grams,
+  });
+
+  final String foodSourceId;
+  final int sortOrder;
+  final String label;
+  final double grams;
+}

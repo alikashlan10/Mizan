@@ -65,4 +65,22 @@ void main(List<String> args) {
   final out = File('assets/data/usda_sr.tsv')..createSync(recursive: true);
   out.writeAsStringSync('${rows.join('\n')}\n');
   stdout.writeln('Wrote ${rows.length} foods to ${out.path}');
+
+  // Serving sizes: food id, order, label such as "1 cup, chopped", grams.
+  final servings = <String>[];
+  for (final line in File('$dir/food_portion.csv').readAsLinesSync().skip(1)) {
+    final f = parseCsvLine(line);
+    final grams = double.tryParse(f[7]);
+    final unit = f[6].replaceAll('\t', ' ').trim();
+    if (!amounts.containsKey(f[1]) || grams == null || grams <= 0) continue;
+    if (unit.isEmpty) continue;
+    final amount = double.tryParse(f[3]) ?? 1;
+    final count = amount == amount.roundToDouble()
+        ? amount.toInt().toString()
+        : amount.toString();
+    servings.add([f[1], f[2], '$count $unit', f[7]].join('\t'));
+  }
+  final servingsOut = File('assets/data/usda_sr_servings.tsv');
+  servingsOut.writeAsStringSync('${servings.join('\n')}\n');
+  stdout.writeln('Wrote ${servings.length} servings to ${servingsOut.path}');
 }

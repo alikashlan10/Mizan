@@ -28,6 +28,7 @@ const _coreNutrients = [
     UserProfiles,
     WaterEntries,
     ExerciseEntries,
+    FoodServings,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -46,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -76,6 +77,7 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(userProfiles, userProfiles.macroCarbs);
         await m.addColumn(userProfiles, userProfiles.macroFat);
       }
+      if (from < 5) await m.createTable(foodServings);
       if (from < 3) {
         await m.createTable(waterEntries);
         await m.createTable(exerciseEntries);

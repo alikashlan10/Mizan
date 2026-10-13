@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/database/app_database.dart';
 import 'package:mizan/core/database/database_provider.dart';
 import 'package:mizan/features/foods/domain/food_nutrient_amount.dart';
+import 'package:mizan/features/foods/domain/food_serving.dart';
 import 'package:mizan/features/foods/domain/food_sources.dart';
 import 'package:mizan/features/foods/domain/seed_food.dart';
 
@@ -124,6 +125,55 @@ class FoodRepository {
               ),
         ]);
       });
+    });
+  }
+
+  /// The serving sizes known for a food, in display order.
+  Future<List<FoodServing>> servingsOf(int foodId) async {
+    final q = _db.select(_db.foodServings)
+      ..where((s) => s.foodId.equals(foodId))
+      ..orderBy([
+        (s) => OrderingTerm(expression: s.sortOrder),
+        (s) => OrderingTerm(expression: s.id),
+      ]);
+    return [
+      for (final row in await q.get())
+        FoodServing(id: row.id, label: row.label, grams: row.grams),
+    ];
+  }
+
+  Future<bool> hasServingsFrom(String source) async {
+    final q =
+        _db.selectOnly(_db.foodServings).join([
+            innerJoin(
+              _db.foods,
+              _db.foods.id.equalsExp(_db.foodServings.foodId),
+            ),
+          ])
+          ..addColumns([_db.foodServings.id])
+          ..where(_db.foods.source.equals(source))
+          ..limit(1);
+    return (await q.get()).isNotEmpty;
+  }
+
+  /// Adds serving sizes to foods already imported from [source]. Servings of
+  /// foods that are not present are skipped.
+  Future<void> importServings(String source, List<SeedServing> seed) async {
+    final imported = await (_db.select(
+      _db.foods,
+    )..where((f) => f.source.equals(source))).get();
+    final foodIds = {for (final f in imported) f.sourceId: f.id};
+    await _db.batch((b) {
+      b.insertAll(_db.foodServings, [
+        for (final serving in seed)
+          if (foodIds[serving.foodSourceId] case final foodId?)
+            FoodServingsCompanion.insert(
+              foodId: foodId,
+              label: serving.label,
+              grams: serving.grams,
+              sortOrder: serving.sortOrder,
+            ),
+      ]);
     });
   }
 
