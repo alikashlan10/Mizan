@@ -4,6 +4,7 @@ import 'package:mizan/features/diary/presentation/add_entry_dialog.dart';
 import 'package:mizan/features/diary/presentation/diary_screen.dart';
 import 'package:mizan/features/foods/presentation/food_providers.dart';
 import 'package:mizan/features/foods/presentation/food_search_screen.dart';
+import 'package:mizan/features/profile/presentation/profile_screen.dart';
 
 /// Root of the app: the bottom navigation bar and its tabs.
 ///
@@ -38,7 +39,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             },
           ),
           const _ComingSoon(title: 'Statistics'),
-          const _ComingSoon(title: 'Profile'),
+          const ProfileScreen(),
         ],
       ),
       bottomNavigationBar: NavigationBar(

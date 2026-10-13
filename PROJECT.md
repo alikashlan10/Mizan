@@ -64,6 +64,9 @@ it in navigation and in the data model.
 | 2026-10-13 | Walking and running take a duration from the user; calories burned are estimated as intensity factor × body weight × hours, using the weight from Personal settings. Only weight lifting is a fixed per-session amount. | Calories burned depend heavily on time. |
 | 2026-10-13 | Water is its own Diary section with quick-add amounts in ml, not a food search. | Water is not a meal and should take one tap to log. |
 | 2026-10-13 | Food source tabs appear only for datasets that are present (USDA and Custom for now). NCCDB is not included. | NCCDB is commercially licensed and cannot be bundled; data-driven tabs let new sources appear automatically. |
+| 2026-10-13 | Calorie calculator: resting calories by Mifflin-St Jeor; maintenance = resting × activity factor (sedentary 1.2, light 1.375, moderate 1.55, very active 1.725, extra active 1.9); target = maintenance + goal offset (extreme cut −750, medium cut −500, light cut −250, maintain 0, light gain +250, medium gain +500 kcal). | Standard, widely used formula and factors. |
+| 2026-10-13 | A calculated target is never below 1,200 kcal; the user can override the target by hand with any value. | An extreme cut on a small, sedentary person would otherwise produce an unsafe figure. |
+| 2026-10-13 | Exercise intensity factors: walking 3.5, running 9.8; a weight-lifting session counts as 60 minutes at 3.5. Calories = factor × body weight (kg) × hours. | Standard MET values; not yet implemented. |
 | 2026-10-13 | Custom meals are recipes: several foods with amounts, nutrition computed from them. Custom foods keep manual entry of nutrition facts. | Avoids retyping facts for meals built from known foods. |
 
 ### Technical
@@ -131,18 +134,15 @@ Rules:
 
 ## Current state
 
-Working prototype: bottom navigation (Diary and Foods work; Statistics and
-Profile are placeholders), diary for any day with a kcal and macro summary, four meal
+Working prototype: bottom navigation (Diary, Foods and Profile work;
+Statistics is a placeholder), a profile with the calorie calculator (metric
+units only, not yet used by the Diary), diary for any day with a kcal and macro summary, four meal
 sections, food search over USDA and custom foods, and custom food creation
 with 8 nutrients (energy, protein, carbs, fat, fiber, sugars, saturated fat,
 sodium).
 
 ## Open questions
 
-- **Exercise constants.** The intensity factors for walking and running and
-  the fixed amount for a weight-lifting session.
-- **Calorie calculator.** Which formula, which activity levels, and the
-  calorie offset for each goal level (medium cut, extreme cut, and so on).
 - **Full nutrient list.** The prototype tracks 8 nutrients; the target is
   the full vitamin, mineral, amino acid and fatty acid set.
 - **Display options** for calories and amounts (kcal/kJ, g/oz, per 100 g or

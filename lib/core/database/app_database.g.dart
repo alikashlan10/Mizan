@@ -1367,6 +1367,506 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
   }
 }
 
+class $UserProfilesTable extends UserProfiles
+    with TableInfo<$UserProfilesTable, UserProfile> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserProfilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sexMeta = const VerificationMeta('sex');
+  @override
+  late final GeneratedColumn<String> sex = GeneratedColumn<String>(
+    'sex',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ageMeta = const VerificationMeta('age');
+  @override
+  late final GeneratedColumn<int> age = GeneratedColumn<int>(
+    'age',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _heightCmMeta = const VerificationMeta(
+    'heightCm',
+  );
+  @override
+  late final GeneratedColumn<double> heightCm = GeneratedColumn<double>(
+    'height_cm',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weightKgMeta = const VerificationMeta(
+    'weightKg',
+  );
+  @override
+  late final GeneratedColumn<double> weightKg = GeneratedColumn<double>(
+    'weight_kg',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activityMeta = const VerificationMeta(
+    'activity',
+  );
+  @override
+  late final GeneratedColumn<String> activity = GeneratedColumn<String>(
+    'activity',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _goalMeta = const VerificationMeta('goal');
+  @override
+  late final GeneratedColumn<String> goal = GeneratedColumn<String>(
+    'goal',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _customTargetKcalMeta = const VerificationMeta(
+    'customTargetKcal',
+  );
+  @override
+  late final GeneratedColumn<double> customTargetKcal = GeneratedColumn<double>(
+    'custom_target_kcal',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    sex,
+    age,
+    heightCm,
+    weightKg,
+    activity,
+    goal,
+    customTargetKcal,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_profiles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserProfile> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('sex')) {
+      context.handle(
+        _sexMeta,
+        sex.isAcceptableOrUnknown(data['sex']!, _sexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sexMeta);
+    }
+    if (data.containsKey('age')) {
+      context.handle(
+        _ageMeta,
+        age.isAcceptableOrUnknown(data['age']!, _ageMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ageMeta);
+    }
+    if (data.containsKey('height_cm')) {
+      context.handle(
+        _heightCmMeta,
+        heightCm.isAcceptableOrUnknown(data['height_cm']!, _heightCmMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_heightCmMeta);
+    }
+    if (data.containsKey('weight_kg')) {
+      context.handle(
+        _weightKgMeta,
+        weightKg.isAcceptableOrUnknown(data['weight_kg']!, _weightKgMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_weightKgMeta);
+    }
+    if (data.containsKey('activity')) {
+      context.handle(
+        _activityMeta,
+        activity.isAcceptableOrUnknown(data['activity']!, _activityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_activityMeta);
+    }
+    if (data.containsKey('goal')) {
+      context.handle(
+        _goalMeta,
+        goal.isAcceptableOrUnknown(data['goal']!, _goalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_goalMeta);
+    }
+    if (data.containsKey('custom_target_kcal')) {
+      context.handle(
+        _customTargetKcalMeta,
+        customTargetKcal.isAcceptableOrUnknown(
+          data['custom_target_kcal']!,
+          _customTargetKcalMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  UserProfile map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserProfile(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      sex: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sex'],
+      )!,
+      age: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}age'],
+      )!,
+      heightCm: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}height_cm'],
+      )!,
+      weightKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}weight_kg'],
+      )!,
+      activity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity'],
+      )!,
+      goal: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}goal'],
+      )!,
+      customTargetKcal: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}custom_target_kcal'],
+      ),
+    );
+  }
+
+  @override
+  $UserProfilesTable createAlias(String alias) {
+    return $UserProfilesTable(attachedDatabase, alias);
+  }
+}
+
+class UserProfile extends DataClass implements Insertable<UserProfile> {
+  final int id;
+  final String sex;
+  final int age;
+  final double heightCm;
+  final double weightKg;
+  final String activity;
+  final String goal;
+  final double? customTargetKcal;
+  const UserProfile({
+    required this.id,
+    required this.sex,
+    required this.age,
+    required this.heightCm,
+    required this.weightKg,
+    required this.activity,
+    required this.goal,
+    this.customTargetKcal,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['sex'] = Variable<String>(sex);
+    map['age'] = Variable<int>(age);
+    map['height_cm'] = Variable<double>(heightCm);
+    map['weight_kg'] = Variable<double>(weightKg);
+    map['activity'] = Variable<String>(activity);
+    map['goal'] = Variable<String>(goal);
+    if (!nullToAbsent || customTargetKcal != null) {
+      map['custom_target_kcal'] = Variable<double>(customTargetKcal);
+    }
+    return map;
+  }
+
+  UserProfilesCompanion toCompanion(bool nullToAbsent) {
+    return UserProfilesCompanion(
+      id: Value(id),
+      sex: Value(sex),
+      age: Value(age),
+      heightCm: Value(heightCm),
+      weightKg: Value(weightKg),
+      activity: Value(activity),
+      goal: Value(goal),
+      customTargetKcal: customTargetKcal == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customTargetKcal),
+    );
+  }
+
+  factory UserProfile.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserProfile(
+      id: serializer.fromJson<int>(json['id']),
+      sex: serializer.fromJson<String>(json['sex']),
+      age: serializer.fromJson<int>(json['age']),
+      heightCm: serializer.fromJson<double>(json['heightCm']),
+      weightKg: serializer.fromJson<double>(json['weightKg']),
+      activity: serializer.fromJson<String>(json['activity']),
+      goal: serializer.fromJson<String>(json['goal']),
+      customTargetKcal: serializer.fromJson<double?>(json['customTargetKcal']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'sex': serializer.toJson<String>(sex),
+      'age': serializer.toJson<int>(age),
+      'heightCm': serializer.toJson<double>(heightCm),
+      'weightKg': serializer.toJson<double>(weightKg),
+      'activity': serializer.toJson<String>(activity),
+      'goal': serializer.toJson<String>(goal),
+      'customTargetKcal': serializer.toJson<double?>(customTargetKcal),
+    };
+  }
+
+  UserProfile copyWith({
+    int? id,
+    String? sex,
+    int? age,
+    double? heightCm,
+    double? weightKg,
+    String? activity,
+    String? goal,
+    Value<double?> customTargetKcal = const Value.absent(),
+  }) => UserProfile(
+    id: id ?? this.id,
+    sex: sex ?? this.sex,
+    age: age ?? this.age,
+    heightCm: heightCm ?? this.heightCm,
+    weightKg: weightKg ?? this.weightKg,
+    activity: activity ?? this.activity,
+    goal: goal ?? this.goal,
+    customTargetKcal: customTargetKcal.present
+        ? customTargetKcal.value
+        : this.customTargetKcal,
+  );
+  UserProfile copyWithCompanion(UserProfilesCompanion data) {
+    return UserProfile(
+      id: data.id.present ? data.id.value : this.id,
+      sex: data.sex.present ? data.sex.value : this.sex,
+      age: data.age.present ? data.age.value : this.age,
+      heightCm: data.heightCm.present ? data.heightCm.value : this.heightCm,
+      weightKg: data.weightKg.present ? data.weightKg.value : this.weightKg,
+      activity: data.activity.present ? data.activity.value : this.activity,
+      goal: data.goal.present ? data.goal.value : this.goal,
+      customTargetKcal: data.customTargetKcal.present
+          ? data.customTargetKcal.value
+          : this.customTargetKcal,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserProfile(')
+          ..write('id: $id, ')
+          ..write('sex: $sex, ')
+          ..write('age: $age, ')
+          ..write('heightCm: $heightCm, ')
+          ..write('weightKg: $weightKg, ')
+          ..write('activity: $activity, ')
+          ..write('goal: $goal, ')
+          ..write('customTargetKcal: $customTargetKcal')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    sex,
+    age,
+    heightCm,
+    weightKg,
+    activity,
+    goal,
+    customTargetKcal,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserProfile &&
+          other.id == this.id &&
+          other.sex == this.sex &&
+          other.age == this.age &&
+          other.heightCm == this.heightCm &&
+          other.weightKg == this.weightKg &&
+          other.activity == this.activity &&
+          other.goal == this.goal &&
+          other.customTargetKcal == this.customTargetKcal);
+}
+
+class UserProfilesCompanion extends UpdateCompanion<UserProfile> {
+  final Value<int> id;
+  final Value<String> sex;
+  final Value<int> age;
+  final Value<double> heightCm;
+  final Value<double> weightKg;
+  final Value<String> activity;
+  final Value<String> goal;
+  final Value<double?> customTargetKcal;
+  const UserProfilesCompanion({
+    this.id = const Value.absent(),
+    this.sex = const Value.absent(),
+    this.age = const Value.absent(),
+    this.heightCm = const Value.absent(),
+    this.weightKg = const Value.absent(),
+    this.activity = const Value.absent(),
+    this.goal = const Value.absent(),
+    this.customTargetKcal = const Value.absent(),
+  });
+  UserProfilesCompanion.insert({
+    this.id = const Value.absent(),
+    required String sex,
+    required int age,
+    required double heightCm,
+    required double weightKg,
+    required String activity,
+    required String goal,
+    this.customTargetKcal = const Value.absent(),
+  }) : sex = Value(sex),
+       age = Value(age),
+       heightCm = Value(heightCm),
+       weightKg = Value(weightKg),
+       activity = Value(activity),
+       goal = Value(goal);
+  static Insertable<UserProfile> custom({
+    Expression<int>? id,
+    Expression<String>? sex,
+    Expression<int>? age,
+    Expression<double>? heightCm,
+    Expression<double>? weightKg,
+    Expression<String>? activity,
+    Expression<String>? goal,
+    Expression<double>? customTargetKcal,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sex != null) 'sex': sex,
+      if (age != null) 'age': age,
+      if (heightCm != null) 'height_cm': heightCm,
+      if (weightKg != null) 'weight_kg': weightKg,
+      if (activity != null) 'activity': activity,
+      if (goal != null) 'goal': goal,
+      if (customTargetKcal != null) 'custom_target_kcal': customTargetKcal,
+    });
+  }
+
+  UserProfilesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? sex,
+    Value<int>? age,
+    Value<double>? heightCm,
+    Value<double>? weightKg,
+    Value<String>? activity,
+    Value<String>? goal,
+    Value<double?>? customTargetKcal,
+  }) {
+    return UserProfilesCompanion(
+      id: id ?? this.id,
+      sex: sex ?? this.sex,
+      age: age ?? this.age,
+      heightCm: heightCm ?? this.heightCm,
+      weightKg: weightKg ?? this.weightKg,
+      activity: activity ?? this.activity,
+      goal: goal ?? this.goal,
+      customTargetKcal: customTargetKcal ?? this.customTargetKcal,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (sex.present) {
+      map['sex'] = Variable<String>(sex.value);
+    }
+    if (age.present) {
+      map['age'] = Variable<int>(age.value);
+    }
+    if (heightCm.present) {
+      map['height_cm'] = Variable<double>(heightCm.value);
+    }
+    if (weightKg.present) {
+      map['weight_kg'] = Variable<double>(weightKg.value);
+    }
+    if (activity.present) {
+      map['activity'] = Variable<String>(activity.value);
+    }
+    if (goal.present) {
+      map['goal'] = Variable<String>(goal.value);
+    }
+    if (customTargetKcal.present) {
+      map['custom_target_kcal'] = Variable<double>(customTargetKcal.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserProfilesCompanion(')
+          ..write('id: $id, ')
+          ..write('sex: $sex, ')
+          ..write('age: $age, ')
+          ..write('heightCm: $heightCm, ')
+          ..write('weightKg: $weightKg, ')
+          ..write('activity: $activity, ')
+          ..write('goal: $goal, ')
+          ..write('customTargetKcal: $customTargetKcal')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1374,6 +1874,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FoodsTable foods = $FoodsTable(this);
   late final $FoodNutrientsTable foodNutrients = $FoodNutrientsTable(this);
   late final $DiaryEntriesTable diaryEntries = $DiaryEntriesTable(this);
+  late final $UserProfilesTable userProfiles = $UserProfilesTable(this);
   late final Index diaryEntriesDay = Index(
     'diary_entries_day',
     'CREATE INDEX diary_entries_day ON diary_entries (day)',
@@ -1387,6 +1888,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     foods,
     foodNutrients,
     diaryEntries,
+    userProfiles,
     diaryEntriesDay,
   ];
   @override
@@ -2780,6 +3282,268 @@ typedef $$DiaryEntriesTableProcessedTableManager =
       DiaryEntry,
       PrefetchHooks Function({bool foodId})
     >;
+typedef $$UserProfilesTableCreateCompanionBuilder =
+    UserProfilesCompanion Function({
+      Value<int> id,
+      required String sex,
+      required int age,
+      required double heightCm,
+      required double weightKg,
+      required String activity,
+      required String goal,
+      Value<double?> customTargetKcal,
+    });
+typedef $$UserProfilesTableUpdateCompanionBuilder =
+    UserProfilesCompanion Function({
+      Value<int> id,
+      Value<String> sex,
+      Value<int> age,
+      Value<double> heightCm,
+      Value<double> weightKg,
+      Value<String> activity,
+      Value<String> goal,
+      Value<double?> customTargetKcal,
+    });
+
+class $$UserProfilesTableFilterComposer
+    extends Composer<_$AppDatabase, $UserProfilesTable> {
+  $$UserProfilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sex => $composableBuilder(
+    column: $table.sex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get age => $composableBuilder(
+    column: $table.age,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get heightCm => $composableBuilder(
+    column: $table.heightCm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get weightKg => $composableBuilder(
+    column: $table.weightKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activity => $composableBuilder(
+    column: $table.activity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get goal => $composableBuilder(
+    column: $table.goal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get customTargetKcal => $composableBuilder(
+    column: $table.customTargetKcal,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$UserProfilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserProfilesTable> {
+  $$UserProfilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sex => $composableBuilder(
+    column: $table.sex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get age => $composableBuilder(
+    column: $table.age,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get heightCm => $composableBuilder(
+    column: $table.heightCm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get weightKg => $composableBuilder(
+    column: $table.weightKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get activity => $composableBuilder(
+    column: $table.activity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get goal => $composableBuilder(
+    column: $table.goal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get customTargetKcal => $composableBuilder(
+    column: $table.customTargetKcal,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$UserProfilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserProfilesTable> {
+  $$UserProfilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sex =>
+      $composableBuilder(column: $table.sex, builder: (column) => column);
+
+  GeneratedColumn<int> get age =>
+      $composableBuilder(column: $table.age, builder: (column) => column);
+
+  GeneratedColumn<double> get heightCm =>
+      $composableBuilder(column: $table.heightCm, builder: (column) => column);
+
+  GeneratedColumn<double> get weightKg =>
+      $composableBuilder(column: $table.weightKg, builder: (column) => column);
+
+  GeneratedColumn<String> get activity =>
+      $composableBuilder(column: $table.activity, builder: (column) => column);
+
+  GeneratedColumn<String> get goal =>
+      $composableBuilder(column: $table.goal, builder: (column) => column);
+
+  GeneratedColumn<double> get customTargetKcal => $composableBuilder(
+    column: $table.customTargetKcal,
+    builder: (column) => column,
+  );
+}
+
+class $$UserProfilesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserProfilesTable,
+          UserProfile,
+          $$UserProfilesTableFilterComposer,
+          $$UserProfilesTableOrderingComposer,
+          $$UserProfilesTableAnnotationComposer,
+          $$UserProfilesTableCreateCompanionBuilder,
+          $$UserProfilesTableUpdateCompanionBuilder,
+          (
+            UserProfile,
+            BaseReferences<_$AppDatabase, $UserProfilesTable, UserProfile>,
+          ),
+          UserProfile,
+          PrefetchHooks Function()
+        > {
+  $$UserProfilesTableTableManager(_$AppDatabase db, $UserProfilesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserProfilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserProfilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserProfilesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> sex = const Value.absent(),
+                Value<int> age = const Value.absent(),
+                Value<double> heightCm = const Value.absent(),
+                Value<double> weightKg = const Value.absent(),
+                Value<String> activity = const Value.absent(),
+                Value<String> goal = const Value.absent(),
+                Value<double?> customTargetKcal = const Value.absent(),
+              }) => UserProfilesCompanion(
+                id: id,
+                sex: sex,
+                age: age,
+                heightCm: heightCm,
+                weightKg: weightKg,
+                activity: activity,
+                goal: goal,
+                customTargetKcal: customTargetKcal,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String sex,
+                required int age,
+                required double heightCm,
+                required double weightKg,
+                required String activity,
+                required String goal,
+                Value<double?> customTargetKcal = const Value.absent(),
+              }) => UserProfilesCompanion.insert(
+                id: id,
+                sex: sex,
+                age: age,
+                heightCm: heightCm,
+                weightKg: weightKg,
+                activity: activity,
+                goal: goal,
+                customTargetKcal: customTargetKcal,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$UserProfilesTable, UserProfile>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $UserProfilesTable,
+                    UserProfile
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$UserProfilesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserProfilesTable,
+      UserProfile,
+      $$UserProfilesTableFilterComposer,
+      $$UserProfilesTableOrderingComposer,
+      $$UserProfilesTableAnnotationComposer,
+      $$UserProfilesTableCreateCompanionBuilder,
+      $$UserProfilesTableUpdateCompanionBuilder,
+      (
+        UserProfile,
+        BaseReferences<_$AppDatabase, $UserProfilesTable, UserProfile>,
+      ),
+      UserProfile,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2792,4 +3556,6 @@ class $AppDatabaseManager {
       $$FoodNutrientsTableTableManager(_db, _db.foodNutrients);
   $$DiaryEntriesTableTableManager get diaryEntries =>
       $$DiaryEntriesTableTableManager(_db, _db.diaryEntries);
+  $$UserProfilesTableTableManager get userProfiles =>
+      $$UserProfilesTableTableManager(_db, _db.userProfiles);
 }

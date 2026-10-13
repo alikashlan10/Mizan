@@ -32,6 +32,21 @@ class FoodNutrients extends Table {
   Set<Column> get primaryKey => {foodId, nutrientId};
 }
 
+/// The single user's details. Enum-like columns hold the enum value's name.
+class UserProfiles extends Table {
+  IntColumn get id => integer()();
+  TextColumn get sex => text()();
+  IntColumn get age => integer()();
+  RealColumn get heightCm => real()();
+  RealColumn get weightKg => real()();
+  TextColumn get activity => text()();
+  TextColumn get goal => text()();
+  RealColumn get customTargetKcal => real().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @TableIndex(name: 'diary_entries_day', columns: {#day})
 class DiaryEntries extends Table {
   IntColumn get id => integer().autoIncrement()();
