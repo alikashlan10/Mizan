@@ -82,7 +82,7 @@ it in navigation and in the data model.
 | 2026-10-14 | Custom foods can have their own serving sizes, and custom foods and meals can be edited from their nutrition facts screen. | Same convenience as bundled foods. |
 | 2026-10-14 | Comparison holds two to four foods, matched either at the same weight or at the weights that supply the same amount of one chosen nutrient. Each nutrient is a card with one bar per food, scaled to the largest value; a food with none of the matched nutrient is shown as such. It opens from the Foods tab and from a food's nutrition facts. | Covers both "100 g of rice vs 100 g of pasta" and "10 g of carbs from each". Four is what fits a phone. |
 | 2026-10-14 | Compared foods are identified by letters (A, B, C, D). With three or four foods the bars are a single colour. | The chart colours already mean protein, carbs, fat and the expenditure parts; reusing them for foods would break "a colour always means the same thing". |
-| 2026-10-16 | With exactly two foods, each nutrient is one split bar: A (blue, `compareA`) fills from the left and B (amber, `compareB`) from the right, in proportion to their amounts, with the values at each end. The weight and amount inputs are centred instead of full width. | Easier to read at a glance than two separate bars. The two colours were checked as a pair; amber is close to `chartResting`, which never appears on this screen. |
+| 2026-10-16 | With exactly two foods, each nutrient is one split bar: A (blue, `compareA`) fills from the left and B (dark blue, `compareB`) from the right, in proportion to their amounts, with the values at each end. The weight and amount inputs are centred instead of full width. | Easier to read at a glance than two separate bars. B was first amber; changed on 2026-10-16 to a darker shade of the same blue at the user's request. The two shades differ by about 1.9:1 in contrast, and each side is also labelled by position and value. |
 | 2026-10-13 | Custom meals are recipes: several foods with amounts, nutrition computed from them. Custom foods keep manual entry of nutrition facts. | Avoids retyping facts for meals built from known foods. |
 
 ### Technical
@@ -173,7 +173,7 @@ this table.
 | `chartActivity` | `#D55181` | Everyday activity calories |
 | `chartExercise` | `#9085E9` | Exercise calories |
 | `compareA` | `#3987E5` | Food A when exactly two foods are compared |
-| `compareB` | `#C4861A` | Food B when exactly two foods are compared |
+| `compareB` | `#2058B0` | Food B when exactly two foods are compared |
 
 Chart rules:
 

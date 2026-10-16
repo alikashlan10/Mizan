@@ -35,11 +35,12 @@ abstract final class AppColors {
   static const chartActivity = Color(0xFFD55181);
   static const chartExercise = Color(0xFF9085E9);
 
-  // The two sides of a two-food comparison, checked as a pair against
-  // [surfaceRaised]. Amber sits near [chartResting], which never appears on
-  // the comparison screen.
+  // The two sides of a two-food comparison: two shades of one blue, told
+  // apart by lightness (about 1.9:1 between them) as well as by position and
+  // the values printed at each end. The darker one still reads at about
+  // 2.3:1 against [surfaceRaised].
   static const compareA = Color(0xFF3987E5);
-  static const compareB = Color(0xFFC4861A);
+  static const compareB = Color(0xFF2058B0);
 
   /// The unfilled part of a ring or meter.
   static const chartTrack = outline;
