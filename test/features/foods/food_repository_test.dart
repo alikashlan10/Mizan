@@ -5,6 +5,7 @@ import 'package:mizan/core/database/app_database.dart';
 import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/features/foods/data/food_repository.dart';
 import 'package:mizan/features/foods/data/food_seed.dart';
+import 'package:mizan/features/foods/domain/food_categories.dart';
 import 'package:mizan/features/foods/domain/food_serving.dart';
 import 'package:mizan/features/foods/domain/food_sources.dart';
 import 'package:mizan/features/foods/domain/seed_food.dart';
@@ -162,6 +163,71 @@ void main() {
     const large = FoodServing(id: 1, label: '1 large', grams: 50);
     expect(const FoodAmount(quantity: 2, serving: large).grams, 100);
     expect(const FoodAmount.grams(150).grams, 150);
+  });
+
+  test(
+    'processed foods rank after whole foods, whatever their length',
+    () async {
+      await foods.importFoods(FoodSources.usda, const [
+        SeedFood(
+          sourceId: '1',
+          name: 'Chicken breast, roll, oven-roasted',
+          amounts: {},
+          category: 'Sausages and Luncheon Meats',
+        ),
+        SeedFood(
+          sourceId: '2',
+          name:
+              'Chicken, broilers or fryers, breast, meat only, cooked, roasted',
+          amounts: {},
+          category: 'Poultry Products',
+        ),
+      ]);
+
+      expect(await search('chicken breast'), [
+        'Chicken, broilers or fryers, breast, meat only, cooked, roasted',
+        'Chicken breast, roll, oven-roasted',
+      ]);
+      final roll = (await foods.watchSearch('roll').first).single;
+      expect(foodOriginLabel(roll), 'USDA · Sausages and Luncheon Meats');
+    },
+  );
+
+  test('categories are filled in for foods imported without them', () async {
+    await foods.importFoods(FoodSources.usda, const [
+      SeedFood(sourceId: '10', name: 'Egg', amounts: {}),
+    ]);
+    var loads = 0;
+    Future<String> load() async {
+      loads++;
+      return '10\tEgg\t143\t12.6\t0.7\t9.5\t0\t0.4\t3.1\t142\t'
+          'Dairy and Egg Products\n';
+    }
+
+    expect(await foods.hasUncategorisedFrom(FoodSources.usda), isTrue);
+    await seedCategoriesIfNeeded(foods, load);
+    await seedCategoriesIfNeeded(foods, load);
+
+    expect(loads, 1);
+    final egg = (await foods.watchSearch('egg').first).single;
+    expect(egg.category, 'Dairy and Egg Products');
+  });
+
+  test('a version 6 database gains categories on upgrade', () async {
+    final old = openDatabaseAtVersion(
+      6,
+      rows: [
+        "INSERT INTO foods (name, source, source_id) VALUES ('Egg', 'usda_sr', '10')",
+      ],
+    );
+    addTearDown(old.close);
+    final oldFoods = FoodRepository(old);
+
+    expect(await oldFoods.hasUncategorisedFrom(FoodSources.usda), isTrue);
+    await oldFoods.setCategories(FoodSources.usda, {
+      '10': 'Dairy and Egg Products',
+    });
+    expect(await oldFoods.hasUncategorisedFrom(FoodSources.usda), isFalse);
   });
 
   test('search results update when a food is created', () async {

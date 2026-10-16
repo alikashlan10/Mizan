@@ -53,13 +53,20 @@ void main(List<String> args) {
         f[3];
   }
 
+  final categories = <String, String>{
+    for (final line in File('$dir/food_category.csv').readAsLinesSync().skip(1))
+      if (parseCsvLine(line) case [final id, _, final description, ...])
+        id: description,
+  };
+
+  // Columns: source id, name, the nutrients above, USDA food category.
   final rows = <String>[];
   for (final line in File('$dir/food.csv').readAsLinesSync().skip(1)) {
     final f = parseCsvLine(line);
     final values = amounts[f[0]];
     if (values == null) continue;
     final name = f[2].replaceAll('\t', ' ').trim();
-    rows.add([f[0], name, ...values].join('\t'));
+    rows.add([f[0], name, ...values, categories[f[3]] ?? ''].join('\t'));
   }
 
   final out = File('assets/data/usda_sr.tsv')..createSync(recursive: true);

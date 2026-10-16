@@ -77,4 +77,11 @@ const _schemaSteps = <int, List<String>>{
         'ON DELETE CASCADE, label TEXT NOT NULL, grams REAL NOT NULL, '
         'sort_order INTEGER NOT NULL)',
   ],
+  6: [
+    'ALTER TABLE foods ADD COLUMN deleted_at INTEGER',
+    'CREATE TABLE recipe_ingredients (id INTEGER NOT NULL PRIMARY KEY '
+        'AUTOINCREMENT, recipe_id INTEGER NOT NULL REFERENCES foods (id) '
+        'ON DELETE CASCADE, ingredient_id INTEGER NOT NULL REFERENCES foods '
+        '(id), grams REAL NOT NULL, sort_order INTEGER NOT NULL)',
+  ],
 };

@@ -74,6 +74,7 @@ it in navigation and in the data model.
 | 2026-10-14 | Under the Diary rings are only three full-width bars: protein, carbs and fat, each filling toward its daily target. The breakdowns of expenditure (resting, activity, exercise) and of remaining (target, exercise, eaten) move to the Statistics page. | The Diary should show only the most important figures; detail belongs in Statistics. |
 | 2026-10-13 | Macro targets are set in the Profile as Standard, Percent of calories, or Grams. Standard is 20% protein / 50% carbohydrate / 30% fat of the calorie target, converted at 4 / 4 / 9 kcal per gram. Percentages must total 100. | Standard sits inside the commonly advised ranges (protein 10–35%, carbohydrate 45–65%, fat 20–35%); gram targets stay fixed when the calorie target changes. |
 | 2026-10-14 | Food search matches the start of words ("cook" finds "cooked", not "uncooked"), every typed word must match, and shorter names rank first. | Matching inside words returned opposites such as "uncooked" for "cooked". |
+| 2026-10-16 | Each USDA food carries its USDA category (stored in `foods.category`, schema version 7), shown under its name as "USDA · Poultry Products". Search ranks processed and prepared categories last (luncheon meats, fast food, restaurant food, prepared meals, baby food), before applying shortest-name-first. Databases seeded earlier gain categories on next launch. | Searching "chicken breast" returned a processed deli roll (14.6 g protein) above plain roasted chicken breast (31 g), because USDA gives whole foods long names. |
 | 2026-10-14 | In the Foods tab, tapping a food opens its nutrition facts (with an adjustable amount and an Add to diary button). From a Diary section's plus button, tapping a food goes straight to the amount dialog. | Browsing wants detail; logging wants speed. |
 | 2026-10-14 | Foods have serving sizes ("1 cup", "1 large") alongside grams, chosen from a unit dropdown wherever an amount is entered. USDA's 14,449 servings are bundled as `assets/data/usda_sr_servings.tsv` and imported separately from the foods. Diary entries still store grams only. | Logging "1 egg" is more practical than weighing; a separate import lets databases seeded earlier gain servings. |
 | 2026-10-14 | The nutrition facts screen shows a calorie headline, a stacked bar of calories by macro, and a bar per nutrient filled toward a daily amount: the user's own calorie and macro targets when a profile exists, otherwise a general 2,000 kcal diet. Fiber, saturated fat and sodium use general daily values (28 g, 20 g, 2,300 mg); sugars have none. | Bars make a food's contribution to the day readable at a glance. |
@@ -193,7 +194,7 @@ Chart rules:
 
 ## Current state
 
-As of 2026-10-14, in the dark blue theme with schema version 6:
+As of 2026-10-16, in the dark blue theme with schema version 7:
 
 | Phase 1 page | State |
 |---|---|

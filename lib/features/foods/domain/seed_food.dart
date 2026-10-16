@@ -4,11 +4,15 @@ class SeedFood {
     required this.sourceId,
     required this.name,
     required this.amounts,
+    this.category,
   });
 
   final String sourceId;
   final String name;
   final Map<String, double> amounts;
+
+  /// The dataset's own grouping, such as "Poultry Products".
+  final String? category;
 }
 
 /// A serving size from a bundled dataset, for the food with [foodSourceId].

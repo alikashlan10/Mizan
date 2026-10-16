@@ -31,7 +31,18 @@ List<SeedFood> parseSeedTsv(String tsv) {
           : null;
       if (value != null) amounts[code] = value;
     }
-    foods.add(SeedFood(sourceId: fields[0], name: fields[1], amounts: amounts));
+    final categoryColumn = _seedColumns.length + 2;
+    final category = categoryColumn < fields.length
+        ? fields[categoryColumn].trim()
+        : '';
+    foods.add(
+      SeedFood(
+        sourceId: fields[0],
+        name: fields[1],
+        amounts: amounts,
+        category: category.isEmpty ? null : category,
+      ),
+    );
   }
   return foods;
 }
@@ -63,6 +74,19 @@ Future<void> seedFoodsIfNeeded(
 ) async {
   if (await foods.hasFoodsFrom(FoodSources.usda)) return;
   await foods.importFoods(FoodSources.usda, parseSeedTsv(await loadTsv()));
+}
+
+/// Fills in the USDA categories of foods imported before categories were
+/// bundled. Does nothing once every USDA food has one.
+Future<void> seedCategoriesIfNeeded(
+  FoodRepository foods,
+  Future<String> Function() loadTsv,
+) async {
+  if (!await foods.hasUncategorisedFrom(FoodSources.usda)) return;
+  await foods.setCategories(FoodSources.usda, {
+    for (final food in parseSeedTsv(await loadTsv()))
+      food.sourceId: ?food.category,
+  });
 }
 
 /// Imports the bundled USDA serving sizes once the foods are in. Separate

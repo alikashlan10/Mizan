@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/database/app_database.dart';
 import 'package:mizan/core/database/database_provider.dart';
 import 'package:mizan/core/domain/nutrient_codes.dart';
+import 'package:mizan/features/foods/domain/food_categories.dart';
 import 'package:mizan/features/foods/domain/food_nutrient_amount.dart';
 import 'package:mizan/features/foods/domain/food_serving.dart';
 import 'package:mizan/features/foods/domain/food_sources.dart';
@@ -23,12 +24,16 @@ class FoodRepository {
   )..orderBy([(n) => OrderingTerm(expression: n.sortOrder)])).get();
 
   /// Foods with a word starting with each word of [query], so "cook" finds
-  /// "cooked" but not "uncooked". Shortest names come first, which ranks
-  /// plain foods above their many variations. [source] limits the search to
-  /// one dataset. Emits again whenever foods change.
+  /// "cooked" but not "uncooked". Processed and prepared foods come after
+  /// everything else, then shorter names first, which ranks plain foods above
+  /// their many variations. [source] limits the search to one dataset. Emits
+  /// again whenever foods change.
   Stream<List<Food>> watchSearch(String query, {String? source}) {
     final q = _db.select(_db.foods)
       ..orderBy([
+        (f) => OrderingTerm(
+          expression: f.category.isIn(FoodCategories.rankedLast),
+        ),
         (f) => OrderingTerm(expression: f.name.length),
         (f) => OrderingTerm(expression: f.name),
       ])
@@ -94,6 +99,27 @@ class FoodRepository {
     ];
   }
 
+  /// Whether any food from [source] still lacks a category.
+  Future<bool> hasUncategorisedFrom(String source) async {
+    final q = _db.select(_db.foods)
+      ..where((f) => f.source.equals(source) & f.category.isNull())
+      ..limit(1);
+    return (await q.get()).isNotEmpty;
+  }
+
+  /// Sets the category of foods from [source], keyed by their source id.
+  Future<void> setCategories(String source, Map<String, String> bySourceId) {
+    return _db.batch((b) {
+      for (final e in bySourceId.entries) {
+        b.update(
+          _db.foods,
+          FoodsCompanion(category: Value(e.value)),
+          where: (f) => f.source.equals(source) & f.sourceId.equals(e.key),
+        );
+      }
+    });
+  }
+
   Future<bool> hasFoodsFrom(String source) async {
     final q = _db.select(_db.foods)
       ..where((f) => f.source.equals(source))
@@ -110,6 +136,7 @@ class FoodRepository {
               name: food.name,
               source: source,
               sourceId: Value(food.sourceId),
+              category: Value(food.category),
             ),
         ]);
       });

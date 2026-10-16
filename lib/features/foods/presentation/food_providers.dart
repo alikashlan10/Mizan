@@ -11,6 +11,10 @@ import 'package:mizan/features/foods/domain/meal_ingredient.dart';
 final foodSeedProvider = FutureProvider<void>((ref) async {
   final foods = ref.watch(foodRepositoryProvider);
   await seedFoodsIfNeeded(foods, () => rootBundle.loadString(usdaSeedAsset));
+  await seedCategoriesIfNeeded(
+    foods,
+    () => rootBundle.loadString(usdaSeedAsset),
+  );
   await seedServingsIfNeeded(
     foods,
     () => rootBundle.loadString(usdaServingsAsset),

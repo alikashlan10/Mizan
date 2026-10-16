@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/database/app_database.dart';
+import 'package:mizan/features/foods/domain/food_categories.dart';
 import 'package:mizan/features/foods/domain/food_sources.dart';
 import 'package:mizan/features/foods/presentation/food_form_screen.dart';
 import 'package:mizan/features/foods/presentation/food_providers.dart';
@@ -106,7 +107,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
           itemCount: foods.length,
           itemBuilder: (context, i) => ListTile(
             title: Text(foods[i].name),
-            subtitle: Text(FoodSources.label(foods[i].source)),
+            subtitle: Text(foodOriginLabel(foods[i])),
             onTap: () => widget.onFoodSelected(context, foods[i]),
           ),
         ),

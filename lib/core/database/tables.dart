@@ -20,6 +20,10 @@ class Foods extends Table {
   TextColumn get source => text()();
   TextColumn get sourceId => text().nullable()();
 
+  /// The dataset's own grouping, such as "Poultry Products"; null for foods
+  /// the user created.
+  TextColumn get category => text().nullable()();
+
   /// Set when the user deletes the food. The row stays so that diary entries
   /// and meals using it keep working; it is only hidden from search.
   DateTimeColumn get deletedAt => dateTime().nullable()();

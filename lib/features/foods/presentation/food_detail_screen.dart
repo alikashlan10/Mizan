@@ -9,6 +9,7 @@ import 'package:mizan/core/widgets/stacked_bar.dart';
 import 'package:mizan/features/foods/data/food_repository.dart';
 import 'package:mizan/features/foods/domain/daily_targets.dart';
 import 'package:mizan/features/foods/domain/daily_values.dart';
+import 'package:mizan/features/foods/domain/food_categories.dart';
 import 'package:mizan/features/foods/domain/food_nutrient_amount.dart';
 import 'package:mizan/features/foods/domain/food_serving.dart';
 import 'package:mizan/features/foods/domain/food_sources.dart';
@@ -157,7 +158,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
         children: [
           Text(widget.food.name, style: theme.textTheme.titleLarge),
           const SizedBox(height: 4),
-          Text(FoodSources.label(widget.food.source), style: muted),
+          Text(foodOriginLabel(widget.food), style: muted),
           const SizedBox(height: 16),
           FoodAmountField(
             foodId: widget.food.id,
