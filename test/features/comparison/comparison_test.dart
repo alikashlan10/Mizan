@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mizan/core/database/database_provider.dart';
 import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/core/theme/app_theme.dart';
+import 'package:mizan/core/widgets/stacked_bar.dart';
 import 'package:mizan/features/comparison/domain/comparison.dart';
 import 'package:mizan/features/comparison/presentation/comparison_providers.dart';
 import 'package:mizan/features/comparison/presentation/comparison_screen.dart';
@@ -130,6 +131,9 @@ void main() {
     );
     await settleDatabase();
     await settleDatabase();
+
+    // Two foods share one split bar per nutrient.
+    expect(find.byType(StackedBar), findsNWidgets(8));
 
     // 100 g of each.
     expect(find.text('100 g'), findsNWidgets(2));

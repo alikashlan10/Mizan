@@ -35,6 +35,12 @@ abstract final class AppColors {
   static const chartActivity = Color(0xFFD55181);
   static const chartExercise = Color(0xFF9085E9);
 
+  // The two sides of a two-food comparison, checked as a pair against
+  // [surfaceRaised]. Amber sits near [chartResting], which never appears on
+  // the comparison screen.
+  static const compareA = Color(0xFF3987E5);
+  static const compareB = Color(0xFFC4861A);
+
   /// The unfilled part of a ring or meter.
   static const chartTrack = outline;
 }
