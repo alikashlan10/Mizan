@@ -77,6 +77,9 @@ it in navigation and in the data model.
 | 2026-10-16 | Each USDA food carries its USDA category (stored in `foods.category`, schema version 7), shown under its name as "USDA · Poultry Products". Search ranks processed and prepared categories last (luncheon meats, fast food, restaurant food, prepared meals, baby food), before applying shortest-name-first. Databases seeded earlier gain categories on next launch. | Searching "chicken breast" returned a processed deli roll (14.6 g protein) above plain roasted chicken breast (31 g), because USDA gives whole foods long names. |
 | 2026-10-23 | USDA FNDDS 2021–2023 (5,431 foods and dishes "as eaten", 16,718 portion sizes, public domain) is bundled as a second dataset (`assets/data/usda_fndds.tsv` and `usda_fndds_servings.tsv`, about 1 MB together), shown as the "FNDDS" source tab with its WWEIA categories. Datasets are built by `tool/build_usda_seed.dart <sr\|fndds\|foundation> <csv-dir>`, and each is imported on first launch independently. Baby food, formula, cold cuts and sausages rank last in search. | Adds prepared dishes and realistic portions ("1 medium breast"), and plainer entries for common foods. |
 | 2026-10-23 | USDA Foundation Foods (April 2026 release, public domain) is bundled as a third dataset, shown as the "Foundation" tab: 329 staple foods with 128 serving sizes. Only entries with an energy value are kept (90 partial lab analyses dropped), and where USDA has several records under one name the newest is kept. The build tool takes each nutrient from a list of preferred FDC fields, so energy falls back to the Atwater values and sugars and carbohydrate to their alternative fields when the classic field is empty. | The most recent and detailed analyses of everyday foods. |
+| 2026-10-23 | The app tracks 60 nutrients: energy, water, alcohol, caffeine; carbohydrates, fiber, sugars, starch; fat and its saturated, mono- and polyunsaturated, trans, cholesterol, omega-3 (ALA, EPA, DHA) and omega-6 parts; protein and 18 amino acids; 13 vitamins; 10 minerals. They are defined once in `lib/core/domain/nutrient_catalog.dart` (name, unit, group, preferred USDA fields, FDA daily value), which both the app and the build tool read. The database nutrient list is synced from it on every launch, so adding a nutrient needs no migration. | The main gap against Cronometer. One list avoids the app and the data files drifting apart. |
+| 2026-10-23 | Seed files have a header row naming each column by nutrient code, so columns can be added without breaking older parsers. Each bundled dataset has a version (now 2); when an update ships a higher version, foods already imported are brought up to date in place (schema version 8 adds the `dataset_imports` table). | Existing installs gain the new nutrients without losing diary entries or re-importing. |
+| 2026-10-23 | The nutrition facts screen shows every nutrient the food has data for, in cards by group, with a bar wherever a daily value exists; nutrients without data are hidden. The custom food form keeps energy and macros at the top and the rest in collapsible groups. Comparison shows only nutrients at least one compared food has, under group headings. | 60 rows would otherwise be mostly blanks. |
 | 2026-10-14 | In the Foods tab, tapping a food opens its nutrition facts (with an adjustable amount and an Add to diary button). From a Diary section's plus button, tapping a food goes straight to the amount dialog. | Browsing wants detail; logging wants speed. |
 | 2026-10-14 | Foods have serving sizes ("1 cup", "1 large") alongside grams, chosen from a unit dropdown wherever an amount is entered. USDA's 14,449 servings are bundled as `assets/data/usda_sr_servings.tsv` and imported separately from the foods. Diary entries still store grams only. | Logging "1 egg" is more practical than weighing; a separate import lets databases seeded earlier gain servings. |
 | 2026-10-14 | The nutrition facts screen shows a calorie headline, a stacked bar of calories by macro, and a bar per nutrient filled toward a daily amount: the user's own calorie and macro targets when a profile exists, otherwise a general 2,000 kcal diet. Fiber, saturated fat and sodium use general daily values (28 g, 20 g, 2,300 mg); sugars have none. | Bars make a food's contribution to the day readable at a glance. |
@@ -196,7 +199,7 @@ Chart rules:
 
 ## Current state
 
-As of 2026-10-16, in the dark blue theme with schema version 7:
+As of 2026-10-16, in the dark blue theme with schema version 8:
 
 | Phase 1 page | State |
 |---|---|
@@ -207,8 +210,7 @@ As of 2026-10-16, in the dark blue theme with schema version 7:
 | Personal settings | Done: calorie calculator and macro targets. Metric units only. |
 | Statistics | Not started; the tab is a placeholder. |
 
-Eight nutrients are tracked: energy, protein, carbohydrates, fat, fiber,
-sugars, saturated fat and sodium.
+Sixty nutrients are tracked; see `lib/core/domain/nutrient_catalog.dart`.
 
 ## Open questions
 
@@ -218,7 +220,5 @@ sugars, saturated fat and sodium.
   as "21 g".
 - **Exercise and the budget.** Exercise calories are added to what can be
   eaten; this double counts if the activity level already includes them.
-- **Full nutrient list.** The prototype tracks 8 nutrients; the target is
-  the full vitamin, mineral, amino acid and fatty acid set.
 - **Display options** for calories and amounts (kcal/kJ, g/oz, per 100 g or
   per serving): details still to be discussed.

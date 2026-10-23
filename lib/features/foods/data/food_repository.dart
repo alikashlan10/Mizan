@@ -99,6 +99,56 @@ class FoodRepository {
     ];
   }
 
+  /// The version of [source]'s bundled data last imported, or null if none
+  /// was recorded.
+  Future<int?> importVersion(String source) async {
+    final row = await (_db.select(
+      _db.datasetImports,
+    )..where((d) => d.source.equals(source))).getSingleOrNull();
+    return row?.version;
+  }
+
+  Future<void> setImportVersion(String source, int version) => _db
+      .into(_db.datasetImports)
+      .insertOnConflictUpdate(
+        DatasetImportsCompanion.insert(source: source, version: version),
+      );
+
+  /// Brings the nutrition facts and categories of foods already imported from
+  /// [source] up to date with [seed], matching foods by their source id.
+  /// Amounts that [seed] has are added or replaced; others are left alone.
+  Future<void> refreshFacts(String source, List<SeedFood> seed) {
+    return _db.transaction(() async {
+      final nutrientIds = {for (final n in await allNutrients()) n.code: n.id};
+      final imported = await (_db.select(
+        _db.foods,
+      )..where((f) => f.source.equals(source))).get();
+      final foodIds = {for (final f in imported) f.sourceId: f.id};
+      await _db.batch((b) {
+        for (final food in seed) {
+          final foodId = foodIds[food.sourceId];
+          if (foodId == null) continue;
+          if (food.category != null) {
+            b.update(
+              _db.foods,
+              FoodsCompanion(category: Value(food.category)),
+              where: (f) => f.id.equals(foodId),
+            );
+          }
+          b.insertAllOnConflictUpdate(_db.foodNutrients, [
+            for (final e in food.amounts.entries)
+              if (nutrientIds[e.key] case final nutrientId?)
+                FoodNutrientsCompanion.insert(
+                  foodId: foodId,
+                  nutrientId: nutrientId,
+                  amount: e.value,
+                ),
+          ]);
+        }
+      });
+    });
+  }
+
   /// Whether any food from [source] still lacks a category.
   Future<bool> hasUncategorisedFrom(String source) async {
     final q = _db.select(_db.foods)

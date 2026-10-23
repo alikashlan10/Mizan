@@ -3574,6 +3574,221 @@ class RecipeIngredientsCompanion extends UpdateCompanion<RecipeIngredient> {
   }
 }
 
+class $DatasetImportsTable extends DatasetImports
+    with TableInfo<$DatasetImportsTable, DatasetImport> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DatasetImportsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [source, version];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'dataset_imports';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DatasetImport> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_versionMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {source};
+  @override
+  DatasetImport map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DatasetImport(
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
+    );
+  }
+
+  @override
+  $DatasetImportsTable createAlias(String alias) {
+    return $DatasetImportsTable(attachedDatabase, alias);
+  }
+}
+
+class DatasetImport extends DataClass implements Insertable<DatasetImport> {
+  final String source;
+  final int version;
+  const DatasetImport({required this.source, required this.version});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['source'] = Variable<String>(source);
+    map['version'] = Variable<int>(version);
+    return map;
+  }
+
+  DatasetImportsCompanion toCompanion(bool nullToAbsent) {
+    return DatasetImportsCompanion(
+      source: Value(source),
+      version: Value(version),
+    );
+  }
+
+  factory DatasetImport.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DatasetImport(
+      source: serializer.fromJson<String>(json['source']),
+      version: serializer.fromJson<int>(json['version']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'source': serializer.toJson<String>(source),
+      'version': serializer.toJson<int>(version),
+    };
+  }
+
+  DatasetImport copyWith({String? source, int? version}) => DatasetImport(
+    source: source ?? this.source,
+    version: version ?? this.version,
+  );
+  DatasetImport copyWithCompanion(DatasetImportsCompanion data) {
+    return DatasetImport(
+      source: data.source.present ? data.source.value : this.source,
+      version: data.version.present ? data.version.value : this.version,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DatasetImport(')
+          ..write('source: $source, ')
+          ..write('version: $version')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(source, version);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DatasetImport &&
+          other.source == this.source &&
+          other.version == this.version);
+}
+
+class DatasetImportsCompanion extends UpdateCompanion<DatasetImport> {
+  final Value<String> source;
+  final Value<int> version;
+  final Value<int> rowid;
+  const DatasetImportsCompanion({
+    this.source = const Value.absent(),
+    this.version = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DatasetImportsCompanion.insert({
+    required String source,
+    required int version,
+    this.rowid = const Value.absent(),
+  }) : source = Value(source),
+       version = Value(version);
+  static Insertable<DatasetImport> custom({
+    Expression<String>? source,
+    Expression<int>? version,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (source != null) 'source': source,
+      if (version != null) 'version': version,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DatasetImportsCompanion copyWith({
+    Value<String>? source,
+    Value<int>? version,
+    Value<int>? rowid,
+  }) {
+    return DatasetImportsCompanion(
+      source: source ?? this.source,
+      version: version ?? this.version,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DatasetImportsCompanion(')
+          ..write('source: $source, ')
+          ..write('version: $version, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3589,6 +3804,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FoodServingsTable foodServings = $FoodServingsTable(this);
   late final $RecipeIngredientsTable recipeIngredients =
       $RecipeIngredientsTable(this);
+  late final $DatasetImportsTable datasetImports = $DatasetImportsTable(this);
   late final Index diaryEntriesDay = Index(
     'diary_entries_day',
     'CREATE INDEX diary_entries_day ON diary_entries (day)',
@@ -3607,6 +3823,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     exerciseEntries,
     foodServings,
     recipeIngredients,
+    datasetImports,
     diaryEntriesDay,
   ];
   @override
@@ -6621,6 +6838,160 @@ typedef $$RecipeIngredientsTableProcessedTableManager =
       RecipeIngredient,
       PrefetchHooks Function({bool recipeId, bool ingredientId})
     >;
+typedef $$DatasetImportsTableCreateCompanionBuilder =
+    DatasetImportsCompanion Function({
+      required String source,
+      required int version,
+      Value<int> rowid,
+    });
+typedef $$DatasetImportsTableUpdateCompanionBuilder =
+    DatasetImportsCompanion Function({
+      Value<String> source,
+      Value<int> version,
+      Value<int> rowid,
+    });
+
+class $$DatasetImportsTableFilterComposer
+    extends Composer<_$AppDatabase, $DatasetImportsTable> {
+  $$DatasetImportsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DatasetImportsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DatasetImportsTable> {
+  $$DatasetImportsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DatasetImportsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DatasetImportsTable> {
+  $$DatasetImportsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+}
+
+class $$DatasetImportsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DatasetImportsTable,
+          DatasetImport,
+          $$DatasetImportsTableFilterComposer,
+          $$DatasetImportsTableOrderingComposer,
+          $$DatasetImportsTableAnnotationComposer,
+          $$DatasetImportsTableCreateCompanionBuilder,
+          $$DatasetImportsTableUpdateCompanionBuilder,
+          (
+            DatasetImport,
+            BaseReferences<_$AppDatabase, $DatasetImportsTable, DatasetImport>,
+          ),
+          DatasetImport,
+          PrefetchHooks Function()
+        > {
+  $$DatasetImportsTableTableManager(
+    _$AppDatabase db,
+    $DatasetImportsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DatasetImportsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DatasetImportsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DatasetImportsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> source = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DatasetImportsCompanion(
+                source: source,
+                version: version,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String source,
+                required int version,
+                Value<int> rowid = const Value.absent(),
+              }) => DatasetImportsCompanion.insert(
+                source: source,
+                version: version,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$DatasetImportsTable, DatasetImport>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $DatasetImportsTable,
+                    DatasetImport
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DatasetImportsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DatasetImportsTable,
+      DatasetImport,
+      $$DatasetImportsTableFilterComposer,
+      $$DatasetImportsTableOrderingComposer,
+      $$DatasetImportsTableAnnotationComposer,
+      $$DatasetImportsTableCreateCompanionBuilder,
+      $$DatasetImportsTableUpdateCompanionBuilder,
+      (
+        DatasetImport,
+        BaseReferences<_$AppDatabase, $DatasetImportsTable, DatasetImport>,
+      ),
+      DatasetImport,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6643,4 +7014,6 @@ class $AppDatabaseManager {
       $$FoodServingsTableTableManager(_db, _db.foodServings);
   $$RecipeIngredientsTableTableManager get recipeIngredients =>
       $$RecipeIngredientsTableTableManager(_db, _db.recipeIngredients);
+  $$DatasetImportsTableTableManager get datasetImports =>
+      $$DatasetImportsTableTableManager(_db, _db.datasetImports);
 }

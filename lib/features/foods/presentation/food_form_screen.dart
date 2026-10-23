@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/database/app_database.dart';
+import 'package:mizan/core/domain/nutrient_catalog.dart';
+import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/features/foods/data/food_repository.dart';
 import 'package:mizan/features/foods/domain/food_nutrient_amount.dart';
 import 'package:mizan/features/foods/domain/food_serving.dart';
@@ -102,13 +104,28 @@ class _FoodFormState extends ConsumerState<_FoodForm> {
     super.dispose();
   }
 
+  /// Tracked nutrients of [group] other than the headline ones, in order.
+  List<Nutrient> _inGroup(NutrientGroup group) => [
+    for (final n in widget.nutrients)
+      if (!_headlineCodes.contains(n.code) &&
+          nutrientDefinition(n.code)?.group == group)
+        n,
+  ];
+
+  Widget _amountField(Nutrient n) => TextFormField(
+    controller: _amounts[n.id],
+    keyboardType: _decimalKeyboard,
+    decoration: InputDecoration(labelText: n.name, suffixText: n.unit),
+    validator: _validateAmount,
+  );
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final name = _name.text.trim();
     final amounts = <int, double>{
       for (final e in _amounts.entries)
-        if (e.value.text.trim().isNotEmpty)
-          e.key: double.parse(e.value.text.trim()),
+        // Fields in groups never opened skip validation, so parse safely.
+        e.key: ?_parseAmount(e.value.text),
     };
     final servings = [
       for (final s in _servings)
@@ -151,15 +168,22 @@ class _FoodFormState extends ConsumerState<_FoodForm> {
             const SizedBox(height: 24),
             Text('Nutrients per 100 g', style: theme.textTheme.titleSmall),
             for (final n in widget.nutrients)
-              TextFormField(
-                controller: _amounts[n.id],
-                keyboardType: _decimalKeyboard,
-                decoration: InputDecoration(
-                  labelText: n.name,
-                  suffixText: n.unit,
+              if (_headlineCodes.contains(n.code)) _amountField(n),
+            const SizedBox(height: 8),
+            // The rest in collapsible groups, opened where values exist.
+            for (final group in NutrientGroup.values)
+              if (_inGroup(group) case final members when members.isNotEmpty)
+                ExpansionTile(
+                  title: Text(_groupTitle(group)),
+                  tilePadding: EdgeInsets.zero,
+                  childrenPadding: const EdgeInsets.only(bottom: 8),
+                  // Fields stay alive once opened, so they are validated.
+                  maintainState: true,
+                  initiallyExpanded: members.any(
+                    (n) => _amounts[n.id]!.text.isNotEmpty,
+                  ),
+                  children: [for (final n in members) _amountField(n)],
                 ),
-                validator: _validateAmount,
-              ),
             const SizedBox(height: 24),
             Text('Serving sizes', style: theme.textTheme.titleSmall),
             const SizedBox(height: 4),
@@ -222,6 +246,29 @@ class _FoodFormState extends ConsumerState<_FoodForm> {
 }
 
 const _decimalKeyboard = TextInputType.numberWithOptions(decimal: true);
+
+/// Always visible at the top; the rest are grouped below.
+const _headlineCodes = {
+  NutrientCodes.energy,
+  NutrientCodes.protein,
+  NutrientCodes.carbs,
+  NutrientCodes.fat,
+};
+
+String _groupTitle(NutrientGroup group) => switch (group) {
+  NutrientGroup.general => 'Water, alcohol, caffeine',
+  NutrientGroup.carbohydrates => 'Carbohydrate details',
+  NutrientGroup.lipids => 'Fat details',
+  NutrientGroup.protein => 'Amino acids',
+  NutrientGroup.vitamins => 'Vitamins',
+  NutrientGroup.minerals => 'Minerals',
+};
+
+/// A valid amount, or null for a blank or invalid entry.
+double? _parseAmount(String text) {
+  final value = double.tryParse(text.trim());
+  return value == null || value < 0 ? null : value;
+}
 
 String _trimmed(double value) => value == value.roundToDouble()
     ? value.toInt().toString()

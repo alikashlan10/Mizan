@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/database/app_database.dart';
 import 'package:mizan/core/domain/macro_energy.dart';
+import 'package:mizan/core/domain/nutrient_catalog.dart';
 import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/core/formatting/amount_format.dart';
 import 'package:mizan/core/theme/app_colors.dart';
@@ -99,6 +100,12 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     final grams = amount?.grams ?? 0;
     final targets = widget.targets;
     final onAddToDiary = widget.onAddToDiary;
+    final measuredAgainst = targets.isPersonal
+        ? 'Calories and macronutrients are measured against your daily '
+              'targets; other nutrients against general daily values.'
+        : 'Calories and macronutrients are measured against a general '
+              '${referenceDailyKcal.round()} kcal diet; fill in your profile '
+              'to use your own targets.';
 
     /// Amount of the nutrient with [code] in the entered quantity of food.
     double? of(String code) {
@@ -205,42 +212,20 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            _FactsCard(
-              title: 'More',
-              rows: [
-                _Fact(
-                  'Fiber',
-                  of(NutrientCodes.fiber),
-                  'g',
-                  daily: referenceDailyValues[NutrientCodes.fiber],
+            for (final group in NutrientGroup.values)
+              if (_detailRows(group, of) case final rows when rows.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: _FactsCard(title: _groupTitle(group), rows: rows),
                 ),
-                _Fact('Sugars', of(NutrientCodes.sugars), 'g'),
-                _Fact(
-                  'Saturated fat',
-                  of(NutrientCodes.saturatedFat),
-                  'g',
-                  daily: referenceDailyValues[NutrientCodes.saturatedFat],
-                ),
-                _Fact(
-                  'Sodium',
-                  of(NutrientCodes.sodium),
-                  'mg',
-                  daily: referenceDailyValues[NutrientCodes.sodium],
-                ),
-              ],
-            ),
             if (ingredients != null && ingredients.isNotEmpty) ...[
               const SizedBox(height: 12),
               _IngredientsCard(ingredients: ingredients),
             ],
             const SizedBox(height: 12),
             Text(
-              targets.isPersonal
-                  ? 'Bars show the share of your daily targets. Fiber, '
-                        'saturated fat and sodium use general daily values.'
-                  : 'Bars show the share of a general '
-                        '${referenceDailyKcal.round()} kcal diet. Fill in '
-                        'your profile to use your own targets.',
+              '$measuredAgainst Nutrients this food has no data for are '
+              'not shown.',
               style: muted,
             ),
           ],
@@ -353,6 +338,35 @@ class _EnergyCard extends StatelessWidget {
     );
   }
 }
+
+/// Nutrients shown above the group cards, in the calorie and macro cards.
+const _headlineCodes = {
+  NutrientCodes.energy,
+  NutrientCodes.protein,
+  NutrientCodes.carbs,
+  NutrientCodes.fat,
+};
+
+/// The rows for [group]: each tracked nutrient the food has a value for,
+/// measured against its general daily value where there is one.
+List<_Fact> _detailRows(
+  NutrientGroup group,
+  double? Function(String code) amountOf,
+) => [
+  for (final n in nutrientCatalog)
+    if (n.group == group && !_headlineCodes.contains(n.code))
+      if (amountOf(n.code) case final amount?)
+        _Fact(n.name, amount, n.unit, daily: n.dailyValue),
+];
+
+String _groupTitle(NutrientGroup group) => switch (group) {
+  NutrientGroup.general => 'General',
+  NutrientGroup.carbohydrates => 'Carbohydrates',
+  NutrientGroup.lipids => 'Fats',
+  NutrientGroup.protein => 'Amino acids',
+  NutrientGroup.vitamins => 'Vitamins',
+  NutrientGroup.minerals => 'Minerals',
+};
 
 /// What a meal is made of.
 class _IngredientsCard extends StatelessWidget {

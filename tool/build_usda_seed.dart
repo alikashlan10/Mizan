@@ -10,21 +10,16 @@
 // Usage: dart run tool/build_usda_seed.dart <sr|fndds|foundation> <csv-dir>
 import 'dart:io';
 
-/// The nutrients written to the output, in column order. Each column lists
-/// FDC nutrient ids in order of preference: newer datasets often leave the
-/// classic field empty and report an alternative, such as energy by Atwater
-/// factors instead of "Energy". Must match the nutrient codes listed in
-/// lib/features/foods/data/food_seed.dart.
-const nutrientColumns = [
-  [1008, 2048, 2047], // energy (kcal)
-  [1003], // protein
-  [1005, 1050], // carbohydrate: by difference, else by summation
-  [1004], // fat
-  [1079], // fiber
-  [2000, 1063], // total sugars
-  [1258], // saturated fat
-  [1093], // sodium
-];
+import 'package:mizan/core/domain/nutrient_catalog.dart';
+
+/// The nutrients written to the output, one column each in catalogue order.
+/// Each lists FDC nutrient ids in order of preference: newer datasets often
+/// leave the classic field empty and report an alternative, such as energy
+/// by Atwater factors instead of "Energy".
+final nutrientColumns = [for (final n in nutrientCatalog) n.fdcIds];
+
+/// Position of energy among [nutrientColumns].
+final energyColumn = nutrientCatalog.indexWhere((n) => n.code == 'energy');
 
 /// How one FDC dataset differs from the others.
 class Dataset {
@@ -215,15 +210,13 @@ void main(List<String> args) {
       f[0]: clean(f.length > 2 ? f[2] : f[1]),
   };
 
-  // Columns: source id, name, the nutrients above, category.
   // Rows by FDC id, in file order.
   final rowsById = <String, String>{};
   final idByName = <String, String>{};
   for (final f in readCsv('$dir/food.csv')) {
     final values = amounts[f[0]];
     if (values == null) continue;
-    // Energy is the first column.
-    if (dataset.requireEnergy && values.first.isEmpty) {
+    if (dataset.requireEnergy && values[energyColumn].isEmpty) {
       amounts.remove(f[0]);
       continue;
     }
@@ -240,13 +233,25 @@ void main(List<String> args) {
       }
       idByName[name] = f[0];
     }
-    rowsById[f[0]] = [f[0], name, ...values, categories[f[3]] ?? ''].join('\t');
+    rowsById[f[0]] = [
+      f[0],
+      name,
+      categories[f[3]] ?? '',
+      ...values,
+    ].join('\t');
   }
-  final rows = rowsById.values.toList();
+  // A header names the columns, so the app reads them by nutrient code.
+  final header = [
+    'fdc_id',
+    'name',
+    'category',
+    for (final n in nutrientCatalog) n.code,
+  ];
+  final rows = [header.join('\t'), ...rowsById.values];
   final out = File('assets/data/${dataset.output}.tsv')
     ..createSync(recursive: true);
   out.writeAsStringSync('${rows.join('\n')}\n');
-  stdout.writeln('Wrote ${rows.length} foods to ${out.path}');
+  stdout.writeln('Wrote ${rows.length - 1} foods to ${out.path}');
 
   // Serving sizes: food id, order, label such as "1 cup, chopped", grams.
   final servings = <String>[];

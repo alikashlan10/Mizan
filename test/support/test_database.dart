@@ -84,4 +84,5 @@ const _schemaSteps = <int, List<String>>{
         'ON DELETE CASCADE, ingredient_id INTEGER NOT NULL REFERENCES foods '
         '(id), grams REAL NOT NULL, sort_order INTEGER NOT NULL)',
   ],
+  7: ['ALTER TABLE foods ADD COLUMN category TEXT'],
 };

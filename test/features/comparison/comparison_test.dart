@@ -133,7 +133,8 @@ void main() {
     await settleDatabase();
 
     // Two foods share one split bar per nutrient.
-    expect(find.byType(StackedBar), findsNWidgets(8));
+    // Only energy and carbohydrates are recorded for these two foods.
+    expect(find.byType(StackedBar), findsNWidgets(2));
 
     // 100 g of each.
     expect(find.text('100 g'), findsNWidgets(2));

@@ -121,3 +121,13 @@ class DiaryEntries extends Table {
   RealColumn get grams => real()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
+
+/// Which version of each bundled dataset is in the database, so that an app
+/// update shipping richer data can bring existing foods up to date.
+class DatasetImports extends Table {
+  TextColumn get source => text()();
+  IntColumn get version => integer()();
+
+  @override
+  Set<Column> get primaryKey => {source};
+}

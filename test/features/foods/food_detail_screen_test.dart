@@ -78,8 +78,9 @@ void main() {
     expect(find.text('7% of daily'), findsOneWidget);
     expect(find.text('12.0 g'), findsOneWidget);
     expect(find.text('140 mg'), findsOneWidget);
-    // Carbohydrates, fiber, sugars and saturated fat are not recorded.
-    expect(find.text('—'), findsNWidgets(4));
+    // Carbohydrates are not recorded; other unrecorded nutrients are hidden.
+    expect(find.text('—'), findsOneWidget);
+    expect(find.text('Fiber'), findsNothing);
 
     await tester.tap(find.text('grams'));
     await tester.pumpAndSettle();

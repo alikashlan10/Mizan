@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mizan/core/database/app_database.dart';
+import 'package:mizan/core/domain/nutrient_catalog.dart';
 import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/features/foods/data/food_repository.dart';
 import 'package:mizan/features/foods/data/food_seed.dart';
@@ -29,7 +30,7 @@ void main() {
   test('the core nutrients exist in a new database', () async {
     final nutrients = await foods.allNutrients();
     expect(nutrients.first.code, NutrientCodes.energy);
-    expect(nutrients, hasLength(8));
+    expect(nutrients, hasLength(nutrientCatalog.length));
   });
 
   test('search matches every word, shortest names first', () async {
@@ -200,8 +201,8 @@ void main() {
     var loads = 0;
     Future<String> load() async {
       loads++;
-      return '10\tEgg\t143\t12.6\t0.7\t9.5\t0\t0.4\t3.1\t142\t'
-          'Dairy and Egg Products\n';
+      return 'fdc_id\tname\tcategory\tenergy\tprotein\n'
+          '10\tEgg\tDairy and Egg Products\t143\t12.6\n';
     }
 
     expect(await foods.hasUncategorisedFrom(FoodSources.usda), isTrue);
@@ -242,7 +243,8 @@ void main() {
     var loads = 0;
     Future<String> load() async {
       loads++;
-      return '1\tOil, olive\t884\t0\t0\t100\t0\t0\t13.8\t2\n';
+      return 'fdc_id\tname\tcategory\tenergy\tfat\n'
+          '1\tOil, olive\tFats and Oils\t884\t100\n';
     }
 
     await seedFoodsIfNeeded(foods, FoodSources.usda, load);
@@ -251,6 +253,49 @@ void main() {
     expect(loads, 1);
     final oil = (await foods.watchSearch('olive').first).single;
     expect(oil.source, FoodSources.usda);
+  });
+
+  test('foods imported by an older version gain the new nutrients', () async {
+    // As an install from before versions were recorded: eight nutrients.
+    await foods.importFoods(FoodSources.usda, const [
+      SeedFood(
+        sourceId: '10',
+        name: 'Banana',
+        amounts: {NutrientCodes.energy: 89},
+      ),
+    ]);
+    const dataset = BundledDataset(
+      source: FoodSources.usda,
+      foodsAsset: 'foods',
+      servingsAsset: 'servings',
+      version: 2,
+    );
+    Future<String> load(String asset) async => asset == 'foods'
+        ? 'fdc_id\tname\tcategory\tenergy\tpotassium\n'
+              '10\tBanana\tFruits and Fruit Juices\t89\t358\n'
+        : '';
+
+    await seedDataset(foods, dataset, load);
+
+    final banana = (await foods.watchSearch('banana').first).single;
+    final facts = {
+      for (final n in await foods.nutrientsOf(banana.id))
+        n.code: n.amountPer100g,
+    };
+    expect(facts, {NutrientCodes.energy: 89, 'potassium': 358});
+    expect(await foods.importVersion(FoodSources.usda), 2);
+  });
+
+  test('a version 7 database gains every catalogue nutrient', () async {
+    final old = openDatabaseAtVersion(7);
+    addTearDown(old.close);
+    final oldFoods = FoodRepository(old);
+
+    expect(
+      [for (final n in await oldFoods.allNutrients()) n.code],
+      [for (final n in nutrientCatalog) n.code],
+    );
+    expect(await oldFoods.importVersion(FoodSources.usda), isNull);
   });
 
   test('every bundled dataset imports with categories and servings', () async {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/database/app_database.dart';
+import 'package:mizan/core/domain/nutrient_catalog.dart';
 import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/core/formatting/amount_format.dart';
 import 'package:mizan/core/theme/app_colors.dart';
@@ -181,26 +182,76 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
             Text('Enter an amount above zero.', style: muted)
           else if (!ready)
             const Center(child: CircularProgressIndicator())
-          else if (foods.length == 2)
-            for (final nutrient in nutrients)
-              _PairCard(
-                title: nutrient.name,
-                unit: nutrient.unit,
-                wholeNumbers: nutrient.code == NutrientCodes.energy,
-                a: compared[0].amountOf(nutrient.code),
-                b: compared[1].amountOf(nutrient.code),
-              )
           else
-            for (final nutrient in nutrients)
-              _NutrientCard(
-                title: nutrient.name,
-                unit: nutrient.unit,
-                wholeNumbers: nutrient.code == NutrientCodes.energy,
-                values: [
-                  for (final food in compared) food.amountOf(nutrient.code),
-                ],
-              ),
+            for (final (nutrient, startsGroup) in _shownNutrients(
+              nutrients,
+              compared,
+            )) ...[
+              if (startsGroup)
+                _GroupHeading(nutrientDefinition(nutrient.code)?.group),
+              if (foods.length == 2)
+                _PairCard(
+                  title: nutrient.name,
+                  unit: nutrient.unit,
+                  wholeNumbers: nutrient.code == NutrientCodes.energy,
+                  a: compared[0].amountOf(nutrient.code),
+                  b: compared[1].amountOf(nutrient.code),
+                )
+              else
+                _NutrientCard(
+                  title: nutrient.name,
+                  unit: nutrient.unit,
+                  wholeNumbers: nutrient.code == NutrientCodes.energy,
+                  values: [
+                    for (final food in compared) food.amountOf(nutrient.code),
+                  ],
+                ),
+            ],
         ],
+      ),
+    );
+  }
+}
+
+/// The nutrients at least one compared food has a value for, each with
+/// whether it is the first of its group.
+List<(Nutrient, bool)> _shownNutrients(
+  List<Nutrient> nutrients,
+  List<ComparedFood> compared,
+) {
+  final shown = <(Nutrient, bool)>[];
+  NutrientGroup? previous;
+  for (final n in nutrients) {
+    if (!compared.any((f) => f.amountOf(n.code) != null)) continue;
+    final group = nutrientDefinition(n.code)?.group;
+    shown.add((n, group != previous));
+    previous = group;
+  }
+  return shown;
+}
+
+class _GroupHeading extends StatelessWidget {
+  const _GroupHeading(this.group);
+
+  final NutrientGroup? group;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
+      child: Text(
+        switch (group) {
+          NutrientGroup.general || null => 'General',
+          NutrientGroup.carbohydrates => 'Carbohydrates',
+          NutrientGroup.lipids => 'Fats',
+          NutrientGroup.protein => 'Protein and amino acids',
+          NutrientGroup.vitamins => 'Vitamins',
+          NutrientGroup.minerals => 'Minerals',
+        },
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }

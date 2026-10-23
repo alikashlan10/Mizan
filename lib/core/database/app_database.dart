@@ -2,20 +2,9 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:mizan/core/database/tables.dart';
 import 'package:mizan/core/domain/meal.dart';
-import 'package:mizan/core/domain/nutrient_codes.dart';
+import 'package:mizan/core/domain/nutrient_catalog.dart';
 
 part 'app_database.g.dart';
-
-const _coreNutrients = [
-  (NutrientCodes.energy, 'Energy', 'kcal', 1008),
-  (NutrientCodes.protein, 'Protein', 'g', 1003),
-  (NutrientCodes.carbs, 'Carbohydrates', 'g', 1005),
-  (NutrientCodes.fat, 'Fat', 'g', 1004),
-  (NutrientCodes.fiber, 'Fiber', 'g', 1079),
-  (NutrientCodes.sugars, 'Sugars', 'g', 2000),
-  (NutrientCodes.saturatedFat, 'Saturated fat', 'g', 1258),
-  (NutrientCodes.sodium, 'Sodium', 'mg', 1093),
-];
 
 /// The single local database. Only repositories may use it; everything else
 /// goes through a repository.
@@ -30,6 +19,7 @@ const _coreNutrients = [
     ExerciseEntries,
     FoodServings,
     RecipeIngredients,
+    DatasetImports,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -48,25 +38,11 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (m) async {
-      await m.createAll();
-      await batch((b) {
-        b.insertAll(nutrients, [
-          for (final (i, n) in _coreNutrients.indexed)
-            NutrientsCompanion.insert(
-              code: n.$1,
-              name: n.$2,
-              unit: n.$3,
-              fdcId: Value(n.$4),
-              sortOrder: i,
-            ),
-        ]);
-      });
-    },
+    onCreate: (m) => m.createAll(),
     // Add one step per schema version; never edit a step that has shipped.
     onUpgrade: (m, from, to) async {
       if (from < 2) {
@@ -88,7 +64,38 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(waterEntries);
         await m.createTable(exerciseEntries);
       }
+      if (from < 8) await m.createTable(datasetImports);
     },
-    beforeOpen: (_) => customStatement('PRAGMA foreign_keys = ON'),
+    beforeOpen: (_) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+      await _syncNutrients();
+    },
   );
+
+  /// Makes the nutrient table match [nutrientCatalog]: adds nutrients the app
+  /// has started tracking and refreshes names, units and order. Runs on every
+  /// launch, so adding a nutrient needs no migration. Rows are never deleted,
+  /// since stored amounts refer to them.
+  Future<void> _syncNutrients() async {
+    final existing = {
+      for (final n in await select(nutrients).get()) n.code: n.id,
+    };
+    await batch((b) {
+      for (final (i, n) in nutrientCatalog.indexed) {
+        final row = NutrientsCompanion(
+          code: Value(n.code),
+          name: Value(n.name),
+          unit: Value(n.unit),
+          fdcId: Value(n.fdcIds.first),
+          sortOrder: Value(i),
+        );
+        final id = existing[n.code];
+        if (id == null) {
+          b.insert(nutrients, row);
+        } else {
+          b.update(nutrients, row, where: (t) => t.id.equals(id));
+        }
+      }
+    });
+  }
 }
