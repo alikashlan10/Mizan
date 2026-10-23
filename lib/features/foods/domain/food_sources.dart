@@ -3,6 +3,9 @@ abstract final class FoodSources {
   /// USDA SR Legacy: generic foods, mostly as single ingredients.
   static const usda = 'usda_sr';
 
+  /// USDA Foundation Foods: recent, detailed lab analyses of staple foods.
+  static const foundation = 'usda_foundation';
+
   /// USDA FNDDS: foods and dishes as people eat them, with portion sizes.
   static const fndds = 'usda_fndds';
 
@@ -16,10 +19,11 @@ abstract final class FoodSources {
   static const userCreated = [custom, meal];
 
   /// The order sources are offered in; unknown ones follow alphabetically.
-  static const _order = [usda, fndds, custom, meal];
+  static const _order = [usda, foundation, fndds, custom, meal];
 
   static String label(String source) => switch (source) {
     usda => 'USDA',
+    foundation => 'Foundation',
     fndds => 'FNDDS',
     custom => 'Custom',
     meal => 'Meals',

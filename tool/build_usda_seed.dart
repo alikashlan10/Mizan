@@ -4,14 +4,27 @@
 //   sr     "SR Legacy"            -> assets/data/usda_sr.tsv, usda_sr_servings.tsv
 //   fndds  "Survey Foods (FNDDS)" -> assets/data/usda_fndds.tsv,
 //                                    usda_fndds_servings.tsv
+//   foundation "Foundation Foods" -> assets/data/usda_foundation.tsv,
+//                                    usda_foundation_servings.tsv
 //
-// Usage: dart run tool/build_usda_seed.dart <sr|fndds> <extracted-csv-dir>
+// Usage: dart run tool/build_usda_seed.dart <sr|fndds|foundation> <csv-dir>
 import 'dart:io';
 
-/// The nutrients written to the output, in column order, as FDC nutrient
-/// numbers. Must match the nutrient codes listed in
+/// The nutrients written to the output, in column order. Each column lists
+/// FDC nutrient ids in order of preference: newer datasets often leave the
+/// classic field empty and report an alternative, such as energy by Atwater
+/// factors instead of "Energy". Must match the nutrient codes listed in
 /// lib/features/foods/data/food_seed.dart.
-const nutrientNumbers = [208, 203, 205, 204, 291, 269, 606, 307];
+const nutrientColumns = [
+  [1008, 2048, 2047], // energy (kcal)
+  [1003], // protein
+  [1005, 1050], // carbohydrate: by difference, else by summation
+  [1004], // fat
+  [1079], // fiber
+  [2000, 1063], // total sugars
+  [1258], // saturated fat
+  [1093], // sodium
+];
 
 /// How one FDC dataset differs from the others.
 class Dataset {
@@ -20,6 +33,9 @@ class Dataset {
     required this.nutrientsByNumber,
     required this.categoryFile,
     required this.portionLabel,
+    this.dataType,
+    this.requireEnergy = false,
+    this.latestPerName = false,
   });
 
   /// Base name of the output files in assets/data.
@@ -32,8 +48,30 @@ class Dataset {
   /// The CSV that names the categories in food.csv's category column.
   final String categoryFile;
 
-  /// The serving label for a row of food_portion.csv, or null to skip it.
-  final String? Function(List<String> row) portionLabel;
+  /// The serving label for a row of food_portion.csv, given measure unit
+  /// names by id, or null to skip the row.
+  final String? Function(List<String> row, Map<String, String> units)
+  portionLabel;
+
+  /// Only foods of this `data_type` are kept; the download also holds the
+  /// lab samples behind them.
+  final String? dataType;
+
+  /// Whether to drop foods without an energy value. Some datasets publish
+  /// partial analyses that are of no use for counting calories.
+  final bool requireEnergy;
+
+  /// Whether to keep only the most recent record (highest FDC id) when
+  /// several foods share a name, as with re-analysed Foundation Foods.
+  final bool latestPerName;
+}
+
+/// A whole-number amount without its decimals: "1.0" becomes "1".
+String count(String amount) {
+  final value = double.tryParse(amount) ?? 1;
+  return value == value.roundToDouble()
+      ? value.toInt().toString()
+      : value.toString();
 }
 
 final datasets = {
@@ -42,14 +80,9 @@ final datasets = {
     nutrientsByNumber: false,
     categoryFile: 'food_category.csv',
     // "1" + "cup, chopped".
-    portionLabel: (f) {
+    portionLabel: (f, _) {
       final unit = f[6].trim();
-      if (unit.isEmpty) return null;
-      final amount = double.tryParse(f[3]) ?? 1;
-      final count = amount == amount.roundToDouble()
-          ? amount.toInt().toString()
-          : amount.toString();
-      return '$count $unit';
+      return unit.isEmpty ? null : '${count(f[3])} $unit';
     },
   ),
   'fndds': Dataset(
@@ -57,9 +90,30 @@ final datasets = {
     nutrientsByNumber: true,
     categoryFile: 'wweia_food_category.csv',
     // "1 medium breast"; "Quantity not specified" is not a real serving.
-    portionLabel: (f) {
+    portionLabel: (f, _) {
       final label = f[5].trim();
       return label.isEmpty || label == 'Quantity not specified' ? null : label;
+    },
+  ),
+  'foundation': Dataset(
+    output: 'usda_foundation',
+    nutrientsByNumber: false,
+    categoryFile: 'food_category.csv',
+    dataType: 'foundation_food',
+    requireEnergy: true,
+    latestPerName: true,
+    // "1" + "wedge" + "small (1/8 of small melon)". Units ending in " w" are
+    // lab weighing steps, not servings.
+    portionLabel: (f, units) {
+      final unit = units[f[4]]?.trim() ?? '';
+      if (unit.isEmpty || unit.endsWith(' w') || unit == 'undetermined') {
+        return null;
+      }
+      final detail = [
+        f[5],
+        f[6],
+      ].map((s) => s.trim()).where((s) => s.isNotEmpty);
+      return ['${count(f[3])} $unit', ...detail].join(', ');
     },
   ),
 };
@@ -92,9 +146,22 @@ List<String> parseCsvLine(String line) {
   return fields;
 }
 
-List<List<String>> readCsv(String path) => [
-  for (final line in File(path).readAsLinesSync().skip(1)) parseCsvLine(line),
-];
+/// Rows of a CSV file after its header. A quoted field may span several
+/// lines, as some Foundation Foods descriptions do.
+List<List<String>> readCsv(String path) {
+  final rows = <List<String>>[];
+  final pending = StringBuffer();
+  for (final line in File(path).readAsLinesSync().skip(1)) {
+    if (pending.isNotEmpty) pending.write(' ');
+    pending.write(line);
+    // An odd number of quotes means a quoted field is still open.
+    final quotes = '"'.allMatches(pending.toString()).length;
+    if (quotes.isOdd) continue;
+    rows.add(parseCsvLine(pending.toString()));
+    pending.clear();
+  }
+  return rows;
+}
 
 String clean(String text) => text.replaceAll('\t', ' ').trim();
 
@@ -102,33 +169,45 @@ void main(List<String> args) {
   final dataset = args.length == 2 ? datasets[args[0]] : null;
   if (dataset == null) {
     stderr.writeln(
-      'Usage: dart run tool/build_usda_seed.dart <sr|fndds> <csv-dir>',
+      'Usage: dart run tool/build_usda_seed.dart '
+      '<sr|fndds|foundation> <csv-dir>',
     );
     exit(64);
   }
   final dir = args[1];
 
-  // food_nutrient.csv uses ids or numbers depending on the dataset; map
-  // whichever it uses onto an output column.
-  final numberById = {
-    for (final f in readCsv('$dir/nutrient.csv'))
-      int.parse(f[0]): int.tryParse(f[3].split('.').first),
+  // food_nutrient.csv refers to nutrients by id, or in FNDDS by number;
+  // translate numbers to ids so both read the same way.
+  final idByNumber = {
+    for (final f in readCsv('$dir/nutrient.csv')) f[3]: int.parse(f[0]),
   };
-  final columnByNumber = {
-    for (final (i, number) in nutrientNumbers.indexed) number: i,
-  };
-  int? columnOf(int key) =>
-      columnByNumber[dataset.nutrientsByNumber ? key : numberById[key]];
+  final wanted = {for (final ids in nutrientColumns) ...ids};
 
-  final amounts = <String, List<String>>{};
+  final keep = dataset.dataType == null
+      ? null
+      : {
+          for (final f in readCsv('$dir/food.csv'))
+            if (f[1] == dataset.dataType) f[0],
+        };
+
+  // Every wanted nutrient amount per food, keyed by nutrient id.
+  final found = <String, Map<int, String>>{};
   for (final f in readCsv('$dir/food_nutrient.csv')) {
-    final col = columnOf(int.parse(f[2]));
-    if (col == null) continue;
-    amounts.putIfAbsent(
-      f[1],
-      () => List.filled(nutrientNumbers.length, ''),
-    )[col] = f[3];
+    if (keep != null && !keep.contains(f[1])) continue;
+    final id = dataset.nutrientsByNumber ? idByNumber[f[2]] : int.parse(f[2]);
+    if (id == null || !wanted.contains(id) || f[3].isEmpty) continue;
+    (found[f[1]] ??= {})[id] = f[3];
   }
+  // One value per column: the first preferred id the food has.
+  final amounts = {
+    for (final e in found.entries)
+      e.key: [
+        for (final ids in nutrientColumns)
+          ids
+              .map((id) => e.value[id])
+              .firstWhere((v) => v != null, orElse: () => '')!,
+      ],
+  };
 
   final categories = <String, String>{
     for (final f in readCsv('$dir/${dataset.categoryFile}'))
@@ -137,12 +216,33 @@ void main(List<String> args) {
   };
 
   // Columns: source id, name, the nutrients above, category.
-  final rows = <String>[];
+  // Rows by FDC id, in file order.
+  final rowsById = <String, String>{};
+  final idByName = <String, String>{};
   for (final f in readCsv('$dir/food.csv')) {
     final values = amounts[f[0]];
     if (values == null) continue;
-    rows.add([f[0], clean(f[2]), ...values, categories[f[3]] ?? ''].join('\t'));
+    // Energy is the first column.
+    if (dataset.requireEnergy && values.first.isEmpty) {
+      amounts.remove(f[0]);
+      continue;
+    }
+    final name = clean(f[2]);
+    if (dataset.latestPerName) {
+      final previous = idByName[name];
+      if (previous != null) {
+        if (int.parse(previous) > int.parse(f[0])) {
+          amounts.remove(f[0]);
+          continue;
+        }
+        rowsById.remove(previous);
+        amounts.remove(previous);
+      }
+      idByName[name] = f[0];
+    }
+    rowsById[f[0]] = [f[0], name, ...values, categories[f[3]] ?? ''].join('\t');
   }
+  final rows = rowsById.values.toList();
   final out = File('assets/data/${dataset.output}.tsv')
     ..createSync(recursive: true);
   out.writeAsStringSync('${rows.join('\n')}\n');
@@ -150,10 +250,11 @@ void main(List<String> args) {
 
   // Serving sizes: food id, order, label such as "1 cup, chopped", grams.
   final servings = <String>[];
+  final units = {for (final f in readCsv('$dir/measure_unit.csv')) f[0]: f[1]};
   for (final f in readCsv('$dir/food_portion.csv')) {
     final grams = double.tryParse(f[7]);
     if (!amounts.containsKey(f[1]) || grams == null || grams <= 0) continue;
-    final label = dataset.portionLabel(f);
+    final label = dataset.portionLabel(f, units);
     if (label == null) continue;
     servings.add([f[1], f[2], clean(label), f[7]].join('\t'));
   }

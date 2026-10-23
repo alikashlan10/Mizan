@@ -24,6 +24,11 @@ const bundledDatasets = [
     servingsAsset: 'assets/data/usda_sr_servings.tsv',
   ),
   BundledDataset(
+    source: FoodSources.foundation,
+    foodsAsset: 'assets/data/usda_foundation.tsv',
+    servingsAsset: 'assets/data/usda_foundation_servings.tsv',
+  ),
+  BundledDataset(
     source: FoodSources.fndds,
     foodsAsset: 'assets/data/usda_fndds.tsv',
     servingsAsset: 'assets/data/usda_fndds_servings.tsv',

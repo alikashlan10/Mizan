@@ -260,6 +260,7 @@ void main() {
 
     expect(await foods.watchSources().first, [
       FoodSources.usda,
+      FoodSources.foundation,
       FoodSources.fndds,
     ]);
     for (final dataset in bundledDatasets) {
@@ -271,6 +272,15 @@ void main() {
       (await search('oil olive salad')).first,
       'Oil, olive, salad or cooking',
     );
+
+    // Foundation Foods keeps one record per food, each with energy.
+    final apples = await foods
+        .watchSearch('apples fuji', source: FoodSources.foundation)
+        .first;
+    expect(apples, hasLength(1));
+    final appleEnergy = (await foods.nutrientsOf(apples.single.id))
+        .firstWhere((n) => n.code == NutrientCodes.energy);
+    expect(appleEnergy.amountPer100g, closeTo(58.2, 0.1));
 
     // FNDDS roasted chicken breast: the plain food, with real protein.
     final chicken =
