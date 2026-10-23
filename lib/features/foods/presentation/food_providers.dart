@@ -10,15 +10,9 @@ import 'package:mizan/features/foods/domain/meal_ingredient.dart';
 /// Completes once the bundled food datasets are in the database.
 final foodSeedProvider = FutureProvider<void>((ref) async {
   final foods = ref.watch(foodRepositoryProvider);
-  await seedFoodsIfNeeded(foods, () => rootBundle.loadString(usdaSeedAsset));
-  await seedCategoriesIfNeeded(
-    foods,
-    () => rootBundle.loadString(usdaSeedAsset),
-  );
-  await seedServingsIfNeeded(
-    foods,
-    () => rootBundle.loadString(usdaServingsAsset),
-  );
+  for (final dataset in bundledDatasets) {
+    await seedDataset(foods, dataset, rootBundle.loadString);
+  }
 });
 
 final nutrientsProvider = FutureProvider<List<Nutrient>>(

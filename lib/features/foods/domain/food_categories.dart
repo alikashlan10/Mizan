@@ -3,7 +3,7 @@ import 'package:mizan/features/foods/domain/food_sources.dart';
 
 /// Dataset categories, as stored in `Foods.category`.
 abstract final class FoodCategories {
-  /// USDA categories of processed, prepared or special-purpose foods. Search
+  /// Dataset categories of processed, prepared or special-purpose foods. Search
   /// ranks them after whole foods, so that "chicken breast" finds roasted
   /// chicken breast before a chicken breast deli roll.
   static const rankedLast = [
@@ -14,6 +14,20 @@ abstract final class FoodCategories {
     'Baby Foods',
     'Branded Food Products Database',
     'Quality Control Materials',
+    // FNDDS (WWEIA) categories.
+    'Cold cuts and cured meats',
+    'Sausages',
+    'Baby food: cereals',
+    'Baby food: fruit',
+    'Baby food: meat and dinners',
+    'Baby food: mixtures',
+    'Baby food: snacks and sweets',
+    'Baby food: vegetables',
+    'Baby food: yogurt',
+    'Baby juice',
+    'Baby water',
+    'Formula, prepared from powder',
+    'Formula, ready-to-feed',
   ];
 }
 

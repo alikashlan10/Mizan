@@ -150,8 +150,8 @@ void main() {
         return '10\t1\t1 large\t50\n10\t2\t1 cup (4.86 large eggs)\t243\n';
       }
 
-      await seedServingsIfNeeded(foods, load);
-      await seedServingsIfNeeded(foods, load);
+      await seedServingsIfNeeded(foods, FoodSources.usda, load);
+      await seedServingsIfNeeded(foods, FoodSources.usda, load);
 
       expect(loads, 1);
       final egg = (await foods.watchSearch('egg').first).single;
@@ -205,8 +205,8 @@ void main() {
     }
 
     expect(await foods.hasUncategorisedFrom(FoodSources.usda), isTrue);
-    await seedCategoriesIfNeeded(foods, load);
-    await seedCategoriesIfNeeded(foods, load);
+    await seedCategoriesIfNeeded(foods, FoodSources.usda, load);
+    await seedCategoriesIfNeeded(foods, FoodSources.usda, load);
 
     expect(loads, 1);
     final egg = (await foods.watchSearch('egg').first).single;
@@ -245,19 +245,49 @@ void main() {
       return '1\tOil, olive\t884\t0\t0\t100\t0\t0\t13.8\t2\n';
     }
 
-    await seedFoodsIfNeeded(foods, load);
-    await seedFoodsIfNeeded(foods, load);
+    await seedFoodsIfNeeded(foods, FoodSources.usda, load);
+    await seedFoodsIfNeeded(foods, FoodSources.usda, load);
 
     expect(loads, 1);
     final oil = (await foods.watchSearch('olive').first).single;
     expect(oil.source, FoodSources.usda);
   });
 
-  test('the bundled USDA dataset imports', () async {
-    await seedFoodsIfNeeded(foods, File(usdaSeedAsset).readAsString);
+  test('every bundled dataset imports with categories and servings', () async {
+    for (final dataset in bundledDatasets) {
+      await seedDataset(foods, dataset, (asset) => File(asset).readAsString());
+    }
+
+    expect(await foods.watchSources().first, [
+      FoodSources.usda,
+      FoodSources.fndds,
+    ]);
+    for (final dataset in bundledDatasets) {
+      expect(await foods.hasUncategorisedFrom(dataset.source), isFalse);
+      expect(await foods.hasServingsFrom(dataset.source), isTrue);
+    }
+
     expect(
       (await search('oil olive salad')).first,
       'Oil, olive, salad or cooking',
+    );
+
+    // FNDDS roasted chicken breast: the plain food, with real protein.
+    final chicken =
+        (await foods
+                .watchSearch(
+                  'chicken breast roasted skin not eaten from raw',
+                  source: FoodSources.fndds,
+                )
+                .first)
+            .first;
+    expect(chicken.category, 'Chicken, whole pieces');
+    final protein = (await foods.nutrientsOf(chicken.id))
+        .firstWhere((n) => n.code == NutrientCodes.protein);
+    expect(protein.amountPer100g, closeTo(30.2, 0.1));
+    expect(
+      (await foods.servingsOf(chicken.id)).map((s) => s.label),
+      contains('1 medium breast'),
     );
   });
 }

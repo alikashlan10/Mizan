@@ -3,10 +3,34 @@ import 'package:mizan/features/foods/data/food_repository.dart';
 import 'package:mizan/features/foods/domain/food_sources.dart';
 import 'package:mizan/features/foods/domain/seed_food.dart';
 
-const usdaSeedAsset = 'assets/data/usda_sr.tsv';
-const usdaServingsAsset = 'assets/data/usda_sr_servings.tsv';
+/// A food dataset shipped with the app, built by tool/build_usda_seed.dart.
+class BundledDataset {
+  const BundledDataset({
+    required this.source,
+    required this.foodsAsset,
+    required this.servingsAsset,
+  });
 
-/// Nutrient columns of the seed file, after the source id and name. Must match
+  /// Stored as `Foods.source`; see [FoodSources].
+  final String source;
+  final String foodsAsset;
+  final String servingsAsset;
+}
+
+const bundledDatasets = [
+  BundledDataset(
+    source: FoodSources.usda,
+    foodsAsset: 'assets/data/usda_sr.tsv',
+    servingsAsset: 'assets/data/usda_sr_servings.tsv',
+  ),
+  BundledDataset(
+    source: FoodSources.fndds,
+    foodsAsset: 'assets/data/usda_fndds.tsv',
+    servingsAsset: 'assets/data/usda_fndds_servings.tsv',
+  ),
+];
+
+/// Nutrient columns of a seed file, after the source id and name. Must match
 /// the order written by tool/build_usda_seed.dart.
 const _seedColumns = [
   NutrientCodes.energy,
@@ -67,37 +91,54 @@ List<SeedServing> parseServingsTsv(String tsv) {
   return servings;
 }
 
-/// Imports the bundled USDA foods the first time the app runs.
+/// Imports a bundled dataset's foods the first time the app runs with it.
 Future<void> seedFoodsIfNeeded(
   FoodRepository foods,
+  String source,
   Future<String> Function() loadTsv,
 ) async {
-  if (await foods.hasFoodsFrom(FoodSources.usda)) return;
-  await foods.importFoods(FoodSources.usda, parseSeedTsv(await loadTsv()));
+  if (await foods.hasFoodsFrom(source)) return;
+  await foods.importFoods(source, parseSeedTsv(await loadTsv()));
 }
 
-/// Fills in the USDA categories of foods imported before categories were
-/// bundled. Does nothing once every USDA food has one.
+/// Fills in the categories of foods imported before categories were bundled.
+/// Does nothing once every food from [source] has one.
 Future<void> seedCategoriesIfNeeded(
   FoodRepository foods,
+  String source,
   Future<String> Function() loadTsv,
 ) async {
-  if (!await foods.hasUncategorisedFrom(FoodSources.usda)) return;
-  await foods.setCategories(FoodSources.usda, {
+  if (!await foods.hasUncategorisedFrom(source)) return;
+  await foods.setCategories(source, {
     for (final food in parseSeedTsv(await loadTsv()))
       food.sourceId: ?food.category,
   });
 }
 
-/// Imports the bundled USDA serving sizes once the foods are in. Separate
+/// Imports a bundled dataset's serving sizes once its foods are in. Separate
 /// from the foods so that databases seeded before servings existed gain them.
 Future<void> seedServingsIfNeeded(
   FoodRepository foods,
+  String source,
   Future<String> Function() loadTsv,
 ) async {
-  if (await foods.hasServingsFrom(FoodSources.usda)) return;
-  await foods.importServings(
-    FoodSources.usda,
-    parseServingsTsv(await loadTsv()),
+  if (await foods.hasServingsFrom(source)) return;
+  await foods.importServings(source, parseServingsTsv(await loadTsv()));
+}
+
+/// Brings one bundled dataset fully into the database: foods, then any
+/// categories or servings an older import lacks.
+Future<void> seedDataset(
+  FoodRepository foods,
+  BundledDataset dataset,
+  Future<String> Function(String asset) loadAsset,
+) async {
+  Future<String> loadFoods() => loadAsset(dataset.foodsAsset);
+  await seedFoodsIfNeeded(foods, dataset.source, loadFoods);
+  await seedCategoriesIfNeeded(foods, dataset.source, loadFoods);
+  await seedServingsIfNeeded(
+    foods,
+    dataset.source,
+    () => loadAsset(dataset.servingsAsset),
   );
 }
