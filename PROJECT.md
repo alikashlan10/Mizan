@@ -199,7 +199,7 @@ Chart rules:
 
 ## Current state
 
-As of 2026-10-16, in the dark blue theme with schema version 8:
+As of 2026-10-23, in the dark blue theme with schema version 8:
 
 | Phase 1 page | State |
 |---|---|
