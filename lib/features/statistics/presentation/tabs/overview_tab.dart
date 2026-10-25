@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/domain/nutrient_codes.dart';
-import 'package:mizan/core/formatting/amount_format.dart';
 import 'package:mizan/core/theme/app_colors.dart';
 import 'package:mizan/core/widgets/stacked_bar.dart';
+import 'package:mizan/features/settings/presentation/settings_providers.dart';
 import 'package:mizan/features/statistics/domain/range_stats.dart';
 import 'package:mizan/features/statistics/presentation/statistics_providers.dart';
 import 'package:mizan/features/statistics/presentation/widgets/daily_charts.dart';
@@ -30,13 +30,19 @@ class OverviewTab extends ConsumerWidget {
           StatsCard(
             title: 'Calories eaten and burned',
             subtitle: 'Per day; gaps are days with nothing logged',
-            child: IntakeExpenditureChart(days: days),
+            child: IntakeExpenditureChart(
+              days: days,
+              units: ref.watch(displayUnitsProvider),
+            ),
           ),
         if (multiDay && stats.estimate != null)
           StatsCard(
             title: 'Daily surplus and deficit',
             subtitle: 'Eaten minus burned',
-            child: BalanceChart(days: days),
+            child: BalanceChart(
+              days: days,
+              units: ref.watch(displayUnitsProvider),
+            ),
           ),
         if (stats.estimate != null) _BreakdownCard(stats: stats),
       ],
@@ -45,13 +51,14 @@ class OverviewTab extends ConsumerWidget {
 }
 
 /// The headline: how far over or under the calories burned the range came.
-class _BalanceCard extends StatelessWidget {
+class _BalanceCard extends ConsumerWidget {
   const _BalanceCard({required this.stats});
 
   final RangeStats stats;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final units = ref.watch(displayUnitsProvider);
     final theme = Theme.of(context);
     final muted = theme.textTheme.bodyMedium?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
@@ -79,7 +86,7 @@ class _BalanceCard extends StatelessWidget {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  formatWhole(total.abs()),
+                  units.energyNumber(total.abs()),
                   style: theme.textTheme.displaySmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: total >= 0
@@ -88,7 +95,7 @@ class _BalanceCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text('kcal', style: theme.textTheme.titleMedium),
+                Text(units.energyLabel, style: theme.textTheme.titleMedium),
               ],
             ),
             Text(
@@ -99,7 +106,7 @@ class _BalanceCard extends StatelessWidget {
             ),
             if (perDay && average != null)
               Text(
-                '${average >= 0 ? '+' : ''}${formatWhole(average)} kcal per '
+                '${average >= 0 ? '+' : ''}${units.energy(average)} per '
                 'logged day on average',
                 style: muted,
               ),
@@ -129,14 +136,15 @@ class _BalanceCard extends StatelessWidget {
   }
 }
 
-class _Figure extends StatelessWidget {
+class _Figure extends ConsumerWidget {
   const _Figure({required this.label, required this.kcal});
 
   final String label;
   final double kcal;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final units = ref.watch(displayUnitsProvider);
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -150,7 +158,7 @@ class _Figure extends StatelessWidget {
               ),
             ),
           ),
-          Text('${formatWhole(kcal)} kcal', style: theme.textTheme.bodyLarge),
+          Text(units.energy(kcal), style: theme.textTheme.bodyLarge),
         ],
       ),
     );
@@ -227,7 +235,7 @@ class _BreakdownCard extends StatelessWidget {
   }
 }
 
-class _LegendFigure extends StatelessWidget {
+class _LegendFigure extends ConsumerWidget {
   const _LegendFigure({
     required this.color,
     required this.label,
@@ -239,7 +247,8 @@ class _LegendFigure extends StatelessWidget {
   final double kcal;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final units = ref.watch(displayUnitsProvider);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -247,7 +256,7 @@ class _LegendFigure extends StatelessWidget {
           LegendDot(color: color, label: label),
           const Spacer(),
           Text(
-            '${formatWhole(kcal)} kcal',
+            units.energy(kcal),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],

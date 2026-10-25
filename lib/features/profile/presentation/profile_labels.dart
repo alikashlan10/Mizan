@@ -1,3 +1,4 @@
+import 'package:mizan/core/domain/display_units.dart';
 import 'package:mizan/features/profile/domain/macro_targets.dart';
 import 'package:mizan/features/profile/domain/profile.dart';
 
@@ -45,9 +46,9 @@ extension GoalLabel on Goal {
   };
 
   /// The daily offset from maintenance, such as `−500 kcal`.
-  String get offsetLabel => switch (kcalOffset) {
+  String offsetLabel(DisplayUnits units) => switch (kcalOffset) {
     0 => 'No change',
-    < 0 => '−${-kcalOffset} kcal',
-    _ => '+$kcalOffset kcal',
+    < 0 => '−${units.energy(-kcalOffset.toDouble())}',
+    _ => '+${units.energy(kcalOffset.toDouble())}',
   };
 }

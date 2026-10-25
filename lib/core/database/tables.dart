@@ -136,3 +136,13 @@ class DatasetImports extends Table {
   @override
   Set<Column> get primaryKey => {source};
 }
+
+/// App preferences as named values, such as the energy unit. One row per
+/// preference; a missing row means the default.
+class AppSettings extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/database/app_database.dart';
-import 'package:mizan/core/formatting/amount_format.dart';
 import 'package:mizan/features/foods/data/food_repository.dart';
 import 'package:mizan/features/foods/domain/food_serving.dart';
 import 'package:mizan/features/foods/domain/meal_ingredient.dart';
 import 'package:mizan/features/foods/presentation/food_amount_dialog.dart';
 import 'package:mizan/features/foods/presentation/food_providers.dart';
 import 'package:mizan/features/foods/presentation/food_search_screen.dart';
+import 'package:mizan/features/settings/presentation/settings_providers.dart';
 
 /// Builds a meal out of foods, or edits [meal] when one is given.
 class MealFormScreen extends ConsumerWidget {
@@ -105,6 +105,7 @@ class _MealFormState extends ConsumerState<_MealForm> {
     );
     final grams = _ingredients.fold<double>(0, (sum, i) => sum + i.grams);
     final kcal = _ingredients.fold<double>(0, (sum, i) => sum + i.kcal);
+    final units = ref.watch(displayUnitsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -137,7 +138,7 @@ class _MealFormState extends ConsumerState<_MealForm> {
                   child: Text('Ingredients', style: theme.textTheme.titleSmall),
                 ),
                 Text(
-                  '${kcal.round()} kcal · ${formatAmount(grams)} g',
+                  '${units.energy(kcal)} · ${units.weight(grams)}',
                   style: muted,
                 ),
               ],
@@ -155,8 +156,8 @@ class _MealFormState extends ConsumerState<_MealForm> {
             ListTile(
               title: Text(ingredient.name),
               subtitle: Text(
-                '${formatAmount(ingredient.grams)} g · '
-                '${ingredient.kcal.round()} kcal',
+                '${units.weight(ingredient.grams)} · '
+                '${units.energy(ingredient.kcal)}',
               ),
               trailing: IconButton(
                 icon: const Icon(Icons.close),

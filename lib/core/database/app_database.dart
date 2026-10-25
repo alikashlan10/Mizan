@@ -20,6 +20,7 @@ part 'app_database.g.dart';
     FoodServings,
     RecipeIngredients,
     DatasetImports,
+    AppSettings,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -38,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -65,6 +66,7 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(exerciseEntries);
       }
       if (from < 8) await m.createTable(datasetImports);
+      if (from < 10) await m.createTable(appSettings);
       if (from < 9) {
         await m.addColumn(diaryEntries, diaryEntries.servingQuantity);
         await m.addColumn(diaryEntries, diaryEntries.servingLabel);

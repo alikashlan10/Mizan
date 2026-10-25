@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mizan/core/domain/display_units.dart';
 import 'package:mizan/features/profile/data/profile_repository.dart';
 import 'package:mizan/features/profile/domain/calorie_calculator.dart';
 import 'package:mizan/features/profile/domain/macro_targets.dart';
 import 'package:mizan/features/profile/domain/profile.dart';
 import 'package:mizan/features/profile/presentation/profile_labels.dart';
 import 'package:mizan/features/profile/presentation/profile_providers.dart';
+import 'package:mizan/features/settings/presentation/display_settings_screen.dart';
+import 'package:mizan/features/settings/presentation/settings_providers.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -15,7 +18,18 @@ class ProfileScreen extends ConsumerWidget {
     final profile = ref.watch(profileProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(
+        title: const Text('Profile'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.tune),
+            tooltip: 'Display settings',
+            onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(builder: (_) => const DisplaySettingsScreen()),
+            ),
+          ),
+        ],
+      ),
       body: profile.hasValue
           ? _ProfileForm(initial: profile.value)
           : const Center(child: CircularProgressIndicator()),
@@ -37,8 +51,14 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   late final _age = TextEditingController(text: widget.initial?.age.toString());
   late final _height = _numberController(widget.initial?.heightCm);
   late final _weight = _numberController(widget.initial?.weightKg);
+
+  /// Energy is entered in the user's unit and stored in kcal.
+  late final DisplayUnits _units = ref.read(displayUnitsProvider);
   late final _customTarget = _numberController(
-    widget.initial?.customTargetKcal,
+    switch (widget.initial?.customTargetKcal) {
+      final kcal? => _units.energyValue(kcal).roundToDouble(),
+      null => null,
+    },
   );
   late Sex _sex = widget.initial?.sex ?? Sex.male;
   late ActivityLevel _activity =
@@ -133,7 +153,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     if (_validateAge(_age.text) != null ||
         _validateHeight(_height.text) != null ||
         _validateWeight(_weight.text) != null ||
-        _validateCustomTarget(customText) != null) {
+        _validateCustomTarget(customText, _units) != null) {
       return null;
     }
     return Profile(
@@ -143,7 +163,9 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
       weightKg: weight!,
       activity: _activity,
       goal: _goal,
-      customTargetKcal: customText.isEmpty ? null : custom,
+      customTargetKcal: customText.isEmpty || custom == null
+          ? null
+          : _units.kcalFrom(custom),
       macros: _macroDraft ?? const MacroSetting.standard(),
     );
   }
@@ -169,6 +191,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           _EstimateCard(
             estimate: draft == null ? null : estimateCalories(draft),
             isCustom: draft?.customTargetKcal != null,
+            units: _units,
           ),
           const SizedBox(height: 16),
           SegmentedButton<Sex>(
@@ -229,7 +252,8 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
             isExpanded: true,
             decoration: InputDecoration(
               labelText: 'Goal',
-              helperText: '${_goal.offsetLabel} per day from maintenance',
+              helperText:
+                  '${_goal.offsetLabel(_units)} per day from maintenance',
             ),
             items: [
               for (final goal in Goal.values)
@@ -241,12 +265,12 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           TextFormField(
             controller: _customTarget,
             keyboardType: _decimalKeyboard,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Custom daily target (optional)',
               helperText: 'Replaces the calculated target',
-              suffixText: 'kcal',
+              suffixText: _units.energyLabel,
             ),
-            validator: _validateCustomTarget,
+            validator: (v) => _validateCustomTarget(v, _units),
             onChanged: refresh,
           ),
           const SizedBox(height: 24),
@@ -341,7 +365,13 @@ class _MacroSummary extends StatelessWidget {
 }
 
 class _EstimateCard extends StatelessWidget {
-  const _EstimateCard({required this.estimate, required this.isCustom});
+  const _EstimateCard({
+    required this.estimate,
+    required this.isCustom,
+    required this.units,
+  });
+
+  final DisplayUnits units;
 
   final CalorieEstimate? estimate;
   final bool isCustom;
@@ -353,7 +383,7 @@ class _EstimateCard extends StatelessWidget {
 
     Widget figure(String label, double kcal) => Column(
       children: [
-        Text('${kcal.round()} kcal', style: text.titleMedium),
+        Text(units.energy(kcal), style: text.titleMedium),
         Text(label, style: text.bodySmall),
       ],
     );
@@ -370,7 +400,7 @@ class _EstimateCard extends StatelessWidget {
             : Column(
                 children: [
                   Text(
-                    '${estimate.targetKcal.round()} kcal',
+                    units.energy(estimate.targetKcal),
                     style: text.headlineMedium,
                   ),
                   Text(
@@ -381,7 +411,7 @@ class _EstimateCard extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        'Raised to the ${minimumTargetKcal.round()} kcal '
+                        'Raised to the ${units.energy(minimumTargetKcal)} '
                         'minimum',
                         style: text.bodySmall,
                       ),
@@ -426,5 +456,12 @@ String? _validateHeight(String? input) => _validateRange(input, 80, 250);
 
 String? _validateWeight(String? input) => _validateRange(input, 20, 400);
 
-String? _validateCustomTarget(String? input) =>
-    (input?.trim() ?? '').isEmpty ? null : _validateRange(input, 500, 10000);
+/// Between 500 and 10,000 kcal, checked in the unit the user types in.
+String? _validateCustomTarget(String? input, DisplayUnits units) =>
+    (input?.trim() ?? '').isEmpty
+    ? null
+    : _validateRange(
+        input,
+        units.energyValue(500).round(),
+        units.energyValue(10000).round(),
+      );

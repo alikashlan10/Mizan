@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/features/diary/data/diary_repository.dart';
-
-const _quickAmountsMl = [250, 330, 500, 750];
+import 'package:mizan/features/settings/presentation/settings_providers.dart';
 
 /// Logs water on [day], from a quick amount or a typed one.
 Future<void> showAddWaterSheet(BuildContext context, DateTime day) {
@@ -37,12 +36,15 @@ class _AddWaterSheetState extends ConsumerState<_AddWaterSheet> {
   }
 
   void _addCustom() {
-    final ml = double.tryParse(_custom.text.trim());
-    if (ml != null && ml > 0) _add(ml);
+    final value = double.tryParse(_custom.text.trim());
+    if (value != null && value > 0) {
+      _add(ref.read(displayUnitsProvider).mlFrom(value));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final units = ref.watch(displayUnitsProvider);
     return Padding(
       padding: EdgeInsets.fromLTRB(
         16,
@@ -59,10 +61,10 @@ class _AddWaterSheetState extends ConsumerState<_AddWaterSheet> {
           Wrap(
             spacing: 8,
             children: [
-              for (final ml in _quickAmountsMl)
+              for (final ml in units.quickWaterMl)
                 ActionChip(
-                  label: Text('$ml ml'),
-                  onPressed: () => _add(ml.toDouble()),
+                  label: Text(units.volume(ml)),
+                  onPressed: () => _add(ml),
                 ),
             ],
           ),
@@ -73,9 +75,9 @@ class _AddWaterSheetState extends ConsumerState<_AddWaterSheet> {
                 child: TextField(
                   controller: _custom,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Other amount',
-                    suffixText: 'ml',
+                    suffixText: units.volumeLabel,
                   ),
                   onSubmitted: (_) => _addCustom(),
                 ),

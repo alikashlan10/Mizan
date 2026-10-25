@@ -115,7 +115,6 @@ void main() {
         foodSeedProvider.overrideWith((ref) async {}),
       ],
     );
-    addTearDown(container.dispose);
     container.read(comparedFoodsProvider.notifier)
       ..add(byName['Rice']!)
       ..add(byName['Pasta']!);
@@ -153,6 +152,9 @@ void main() {
     expect(find.text('51 kcal'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
+    // The settings stream stays open until the container goes, and the
+    // database will not close under it.
+    container.dispose();
     await tester.runAsync(db.close);
   });
 }

@@ -9,13 +9,14 @@ import 'package:mizan/features/foods/domain/food_serving.dart';
 import 'package:mizan/features/foods/presentation/widgets/food_amount_field.dart';
 
 /// Asks for an amount and meal, then logs [food] on the selected day.
-/// [meal] and [amount] are what the dialog offers first. Returns whether an
-/// entry was added.
+/// [meal] is the section offered first, and [amount] the amount; without one
+/// the user's preferred starting amount is used. Returns whether an entry was
+/// added.
 Future<bool> showAddEntryDialog(
   BuildContext context,
   Food food, {
   Meal meal = Meal.breakfast,
-  FoodAmount amount = const FoodAmount.grams(100),
+  FoodAmount? amount,
 }) async {
   final added = await showDialog<bool>(
     context: context,
@@ -33,7 +34,7 @@ class _AddEntryDialog extends ConsumerStatefulWidget {
 
   final Food food;
   final Meal meal;
-  final FoodAmount amount;
+  final FoodAmount? amount;
 
   @override
   ConsumerState<_AddEntryDialog> createState() => _AddEntryDialogState();
@@ -41,7 +42,7 @@ class _AddEntryDialog extends ConsumerStatefulWidget {
 
 class _AddEntryDialogState extends ConsumerState<_AddEntryDialog> {
   /// Null while the amount field does not hold a valid number.
-  late FoodAmount? _amount = widget.amount;
+  late FoodAmount? _amount = widget.amount ?? const FoodAmount.grams(100);
   late Meal _meal = widget.meal;
 
   Future<void> _save(FoodAmount amount) async {

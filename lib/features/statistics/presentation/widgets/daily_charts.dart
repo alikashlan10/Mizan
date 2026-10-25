@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mizan/core/domain/display_units.dart';
 import 'package:mizan/core/formatting/amount_format.dart';
 import 'package:mizan/core/theme/app_colors.dart';
 import 'package:mizan/features/statistics/domain/range_stats.dart';
@@ -74,7 +75,11 @@ FlGridData _grid(double step) => FlGridData(
       const FlLine(color: AppColors.outline, strokeWidth: 1),
 );
 
-LineTouchData _touch(List<DayBalance> days, List<String> seriesNames) {
+LineTouchData _touch(
+  List<DayBalance> days,
+  List<String> seriesNames,
+  DisplayUnits units,
+) {
   return LineTouchData(
     touchTooltipData: LineTouchTooltipData(
       getTooltipColor: (_) => AppColors.surface,
@@ -82,7 +87,7 @@ LineTouchData _touch(List<DayBalance> days, List<String> seriesNames) {
         for (final (i, spot) in spots.indexed)
           LineTooltipItem(
             '${i == 0 ? '${DateFormat.MMMd().format(days[spot.x.round()].day)}\n' : ''}'
-            '${seriesNames[spot.barIndex]}: ${formatWhole(spot.y)} kcal',
+            '${seriesNames[spot.barIndex]}: ${formatWhole(spot.y)} ${units.energyLabel}',
             const TextStyle(color: AppColors.textPrimary, fontSize: 12),
           ),
       ],
@@ -90,27 +95,37 @@ LineTouchData _touch(List<DayBalance> days, List<String> seriesNames) {
   );
 }
 
-/// One point per day, with gaps on days that have no value.
-List<FlSpot> _spots(List<DayBalance> days, double? Function(DayBalance) y) => [
+/// One point per day in the user's energy unit, with gaps on days that have
+/// no value.
+List<FlSpot> _spots(
+  List<DayBalance> days,
+  double? Function(DayBalance) kcal,
+  DisplayUnits units,
+) => [
   for (final (i, d) in days.indexed)
-    if (y(d) case final value?)
-      FlSpot(i.toDouble(), value)
+    if (kcal(d) case final value?)
+      FlSpot(i.toDouble(), units.energyValue(value))
     else
       FlSpot.nullSpot,
 ];
 
 /// Daily calories eaten against daily calories burned.
 class IntakeExpenditureChart extends StatelessWidget {
-  const IntakeExpenditureChart({required this.days, super.key});
+  const IntakeExpenditureChart({
+    required this.days,
+    required this.units,
+    super.key,
+  });
 
   final List<DayBalance> days;
+  final DisplayUnits units;
 
   @override
   Widget build(BuildContext context) {
     final hasExpenditure = days.any((d) => d.expenditureKcal != null);
     final highest = [
       for (final d in days) ...[?d.intakeKcal, ?d.expenditureKcal],
-    ].fold<double>(0, max);
+    ].map(units.energyValue).fold<double>(0, max);
     final step = _niceStep(max(highest, 100));
     final top = (highest / step).ceil() * step;
 
@@ -141,17 +156,17 @@ class IntakeExpenditureChart extends StatelessWidget {
               gridData: _grid(step),
               borderData: FlBorderData(show: false),
               titlesData: _titles(days, step),
-              lineTouchData: _touch(days, ['Eaten', 'Burned']),
+              lineTouchData: _touch(days, ['Eaten', 'Burned'], units),
               lineBarsData: [
                 LineChartBarData(
-                  spots: _spots(days, (d) => d.intakeKcal),
+                  spots: _spots(days, (d) => d.intakeKcal, units),
                   color: AppColors.primary,
                   barWidth: 2,
                   dotData: FlDotData(show: days.length <= 31),
                 ),
                 if (hasExpenditure)
                   LineChartBarData(
-                    spots: _spots(days, (d) => d.expenditureKcal),
+                    spots: _spots(days, (d) => d.expenditureKcal, units),
                     color: AppColors.textSecondary,
                     barWidth: 2,
                     dashArray: const [6, 4],
@@ -168,13 +183,17 @@ class IntakeExpenditureChart extends StatelessWidget {
 
 /// Each day's surplus (above zero) or deficit (below zero).
 class BalanceChart extends StatelessWidget {
-  const BalanceChart({required this.days, super.key});
+  const BalanceChart({required this.days, required this.units, super.key});
 
   final List<DayBalance> days;
+  final DisplayUnits units;
 
   @override
   Widget build(BuildContext context) {
-    final values = [for (final d in days) ?d.balanceKcal];
+    final values = [
+      for (final d in days)
+        if (d.balanceKcal case final kcal?) units.energyValue(kcal),
+    ];
     // Keep zero in view, with whole gridlines above and below it.
     final highest = max(100.0, values.fold<double>(0, max));
     final lowest = min(-100.0, values.fold<double>(0, min));
@@ -204,7 +223,7 @@ class BalanceChart extends StatelessWidget {
               gridData: _grid(step),
               borderData: FlBorderData(show: false),
               titlesData: _titles(days, step),
-              lineTouchData: _touch(days, ['Balance']),
+              lineTouchData: _touch(days, ['Balance'], units),
               extraLinesData: ExtraLinesData(
                 horizontalLines: [
                   HorizontalLine(
@@ -216,7 +235,7 @@ class BalanceChart extends StatelessWidget {
               ),
               lineBarsData: [
                 LineChartBarData(
-                  spots: _spots(days, (d) => d.balanceKcal),
+                  spots: _spots(days, (d) => d.balanceKcal, units),
                   color: AppColors.textSecondary,
                   barWidth: 2,
                   dotData: FlDotData(show: days.length <= 31),

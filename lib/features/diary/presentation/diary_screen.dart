@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:mizan/core/domain/display_units.dart';
 import 'package:mizan/core/domain/meal.dart';
 import 'package:mizan/core/formatting/amount_format.dart';
 import 'package:mizan/features/diary/data/diary_repository.dart';
@@ -15,6 +16,7 @@ import 'package:mizan/features/exercise/data/exercise_repository.dart';
 import 'package:mizan/features/exercise/presentation/add_exercise_dialog.dart';
 import 'package:mizan/features/exercise/presentation/exercise_labels.dart';
 import 'package:mizan/features/foods/presentation/food_search_screen.dart';
+import 'package:mizan/features/settings/presentation/settings_providers.dart';
 
 class DiaryScreen extends ConsumerWidget {
   const DiaryScreen({super.key});
@@ -101,10 +103,11 @@ class _MealSection extends ConsumerWidget {
         if (e.meal == meal) e,
     ];
     final kcal = items.fold<double>(0, (sum, e) => sum + (e.kcal ?? 0));
+    final units = ref.watch(displayUnitsProvider);
 
     return DiarySection(
       title: meal.label,
-      summary: '${kcal.round()} kcal',
+      summary: units.energy(kcal),
       addTooltip: 'Add food to ${meal.label.toLowerCase()}',
       onAdd: () => _addFood(context),
       children: [
@@ -112,8 +115,8 @@ class _MealSection extends ConsumerWidget {
           DiaryEntryTile(
             entryKey: item.entryId,
             title: item.foodName,
-            subtitle: _amountLabel(item),
-            trailing: item.kcal == null ? '—' : '${item.kcal!.round()} kcal',
+            subtitle: _amountLabel(item, units),
+            trailing: item.kcal == null ? '—' : units.energy(item.kcal!),
             onDelete: () =>
                 ref.read(diaryRepositoryProvider).deleteEntry(item.entryId),
           ),
@@ -129,17 +132,18 @@ class _WaterSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final entries = ref.watch(dayWaterProvider).value ?? const [];
     final total = entries.fold<double>(0, (sum, e) => sum + e.ml);
+    final units = ref.watch(displayUnitsProvider);
 
     return DiarySection(
       title: 'Water',
-      summary: '${total.round()} ml',
+      summary: units.volume(total),
       addTooltip: 'Add water',
       onAdd: () => showAddWaterSheet(context, ref.read(selectedDayProvider)),
       children: [
         for (final entry in entries)
           DiaryEntryTile(
             entryKey: entry.id,
-            title: '${entry.ml.round()} ml',
+            title: units.volume(entry.ml),
             onDelete: () =>
                 ref.read(diaryRepositoryProvider).deleteWater(entry.id),
           ),
@@ -155,10 +159,11 @@ class _ExerciseSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final entries = ref.watch(dayExercisesProvider).value ?? const [];
     final total = entries.fold<double>(0, (sum, e) => sum + e.kcal);
+    final units = ref.watch(displayUnitsProvider);
 
     return DiarySection(
       title: 'Exercise',
-      summary: '${total.round()} kcal',
+      summary: units.energy(total),
       addTooltip: 'Add exercise',
       onAdd: () =>
           showAddExerciseDialog(context, ref.read(selectedDayProvider)),
@@ -168,7 +173,7 @@ class _ExerciseSection extends ConsumerWidget {
             entryKey: entry.id,
             title: entry.type.label,
             subtitle: '${formatAmount(entry.minutes)} min',
-            trailing: '${entry.kcal.round()} kcal',
+            trailing: units.energy(entry.kcal),
             onDelete: () =>
                 ref.read(exerciseRepositoryProvider).deleteEntry(entry.id),
           ),
@@ -179,8 +184,8 @@ class _ExerciseSection extends ConsumerWidget {
 
 /// How much was logged: the serving as entered, with its weight, or just the
 /// weight. For example "2 × 1 tbsp · 42.0 g" or "150 g".
-String _amountLabel(DiaryItem item) {
-  final grams = '${formatAmount(item.grams)} g';
+String _amountLabel(DiaryItem item, DisplayUnits units) {
+  final grams = units.weight(item.grams);
   final label = item.servingLabel;
   final quantity = item.servingQuantity;
   if (label == null || quantity == null) return grams;

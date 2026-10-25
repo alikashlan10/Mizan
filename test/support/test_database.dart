@@ -89,4 +89,8 @@ const _schemaSteps = <int, List<String>>{
     'CREATE TABLE dataset_imports (source TEXT NOT NULL PRIMARY KEY, '
         'version INTEGER NOT NULL)',
   ],
+  9: [
+    'ALTER TABLE diary_entries ADD COLUMN serving_quantity REAL',
+    'ALTER TABLE diary_entries ADD COLUMN serving_label TEXT',
+  ],
 };

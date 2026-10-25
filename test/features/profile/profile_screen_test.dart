@@ -34,8 +34,8 @@ void main() {
     await tester.pump();
 
     // Male, sedentary, maintain: resting 1780, maintenance 1780 × 1.2.
-    expect(find.text('1780 kcal'), findsOneWidget);
-    expect(find.text('2136 kcal'), findsNWidgets(2));
+    expect(find.text('1,780 kcal'), findsOneWidget);
+    expect(find.text('2,136 kcal'), findsNWidgets(2));
 
     await tester.scrollUntilVisible(
       find.text('Save'),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/domain/nutrient_catalog.dart';
 import 'package:mizan/core/formatting/amount_format.dart';
 import 'package:mizan/core/theme/app_colors.dart';
+import 'package:mizan/features/settings/presentation/settings_providers.dart';
 import 'package:mizan/features/statistics/domain/range_stats.dart';
 import 'package:mizan/features/statistics/presentation/statistics_providers.dart';
 import 'package:mizan/features/statistics/presentation/widgets/stats_card.dart';
@@ -59,14 +60,14 @@ String _groupTitle(NutrientGroup group) => switch (group) {
   NutrientGroup.minerals => 'Minerals',
 };
 
-class _NutrientRow extends StatelessWidget {
+class _NutrientRow extends ConsumerWidget {
   const _NutrientRow({required this.nutrient, required this.average});
 
   final NutrientDefinition nutrient;
   final double average;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final daily = nutrient.dailyValue;
     final share = daily == null ? null : average / daily;
@@ -83,7 +84,7 @@ class _NutrientRow extends StatelessWidget {
               ),
               Text(
                 nutrient.unit == 'kcal'
-                    ? '${formatWhole(average)} kcal'
+                    ? ref.watch(displayUnitsProvider).energy(average)
                     : '${formatAmount(average)} ${nutrient.unit}',
                 style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w600,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/database/app_database.dart';
+import 'package:mizan/core/domain/display_units.dart';
 import 'package:mizan/core/domain/nutrient_catalog.dart';
 import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/core/formatting/amount_format.dart';
@@ -10,6 +11,7 @@ import 'package:mizan/features/comparison/domain/comparison.dart';
 import 'package:mizan/features/comparison/presentation/comparison_providers.dart';
 import 'package:mizan/features/foods/presentation/food_providers.dart';
 import 'package:mizan/features/foods/presentation/food_search_screen.dart';
+import 'package:mizan/features/settings/presentation/settings_providers.dart';
 
 /// Compares up to [maxComparedFoods] foods nutrient by nutrient, either at
 /// the same weight or at the weights that supply the same amount of one
@@ -23,7 +25,11 @@ class ComparisonScreen extends ConsumerStatefulWidget {
 
 class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   bool _byNutrient = false;
-  final _grams = TextEditingController(text: '100');
+  // 100 g, in the user's weight unit.
+  late final _grams = TextEditingController(
+    text: formatAmount(ref.read(displayUnitsProvider).weightValue(100))
+        .replaceAll(RegExp(r'\.0$'), ''),
+  );
   final _amount = TextEditingController(text: '10');
   String _nutrientCode = NutrientCodes.carbs;
 
@@ -38,9 +44,20 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   ComparisonMatch? get _match {
     final value = double.tryParse((_byNutrient ? _amount : _grams).text.trim());
     if (value == null || value <= 0) return null;
+    // Entries are in the user's units; matching works in kcal and grams.
+    final units = ref.read(displayUnitsProvider);
     return _byNutrient
-        ? MatchByNutrient(code: _nutrientCode, amount: value)
-        : MatchByWeight(value);
+        ? MatchByNutrient(
+            code: _nutrientCode,
+            amount: _nutrientCode == NutrientCodes.energy
+                ? units.kcalFrom(value)
+                : value,
+          )
+        : MatchByWeight(
+            units.weightUnit == WeightUnit.grams
+                ? value
+                : value * gramsPerOunce,
+          );
   }
 
   Future<void> _addFood() async {
@@ -64,6 +81,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     );
     final foods = ref.watch(comparedFoodsProvider);
     final nutrients = ref.watch(nutrientsProvider).value ?? const [];
+    final units = ref.watch(displayUnitsProvider);
     final match = _match;
 
     // Each food's facts per 100 g by nutrient code; null while loading.
@@ -90,6 +108,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         children: [
           for (final (i, food) in foods.indexed)
             _FoodRow(
+              units: units,
               index: i,
               food: food,
               badgeColor: foods.length == 2
@@ -167,10 +186,10 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                 controller: _grams,
                 keyboardType: _decimalKeyboard,
                 textAlign: TextAlign.center,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Weight of each food',
                   floatingLabelAlignment: FloatingLabelAlignment.center,
-                  suffixText: 'g',
+                  suffixText: units.weightLabel,
                 ),
                 onChanged: (_) => setState(() {}),
               ),
@@ -189,28 +208,50 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
             )) ...[
               if (startsGroup)
                 _GroupHeading(nutrientDefinition(nutrient.code)?.group),
-              if (foods.length == 2)
-                _PairCard(
-                  title: nutrient.name,
-                  unit: nutrient.unit,
-                  wholeNumbers: nutrient.code == NutrientCodes.energy,
-                  a: compared[0].amountOf(nutrient.code),
-                  b: compared[1].amountOf(nutrient.code),
-                )
-              else
-                _NutrientCard(
-                  title: nutrient.name,
-                  unit: nutrient.unit,
-                  wholeNumbers: nutrient.code == NutrientCodes.energy,
-                  values: [
-                    for (final food in compared) food.amountOf(nutrient.code),
-                  ],
-                ),
+              if (_shownAmounts(nutrient, compared, units) case (
+                final unit,
+                final values,
+              ))
+                if (foods.length == 2)
+                  _PairCard(
+                    title: nutrient.name,
+                    unit: unit,
+                    wholeNumbers: nutrient.code == NutrientCodes.energy,
+                    a: values[0],
+                    b: values[1],
+                  )
+                else
+                  _NutrientCard(
+                    title: nutrient.name,
+                    unit: unit,
+                    wholeNumbers: nutrient.code == NutrientCodes.energy,
+                    values: values,
+                  ),
             ],
         ],
       ),
     );
   }
+}
+
+/// The unit and per-food amounts to show for [nutrient], with energy in the
+/// user's energy unit.
+(String, List<double?>) _shownAmounts(
+  Nutrient nutrient,
+  List<ComparedFood> compared,
+  DisplayUnits units,
+) {
+  final isEnergy = nutrient.code == NutrientCodes.energy;
+  return (
+    isEnergy ? units.energyLabel : nutrient.unit,
+    [
+      for (final food in compared)
+        if (food.amountOf(nutrient.code) case final amount?)
+          isEnergy ? units.energyValue(amount) : amount
+        else
+          null,
+    ],
+  );
 }
 
 /// The nutrients at least one compared food has a value for, each with
@@ -320,6 +361,7 @@ class _FoodRow extends StatelessWidget {
     required this.grams,
     required this.showGrams,
     required this.onRemove,
+    required this.units,
   });
 
   final int index;
@@ -332,6 +374,7 @@ class _FoodRow extends StatelessWidget {
   /// False until the comparison has been worked out.
   final bool showGrams;
   final VoidCallback onRemove;
+  final DisplayUnits units;
 
   @override
   Widget build(BuildContext context) {
@@ -357,7 +400,7 @@ class _FoodRow extends StatelessWidget {
                       Text(
                         grams == null
                             ? 'Has none of this nutrient'
-                            : '${formatAmount(grams)} g',
+                            : units.weight(grams),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),

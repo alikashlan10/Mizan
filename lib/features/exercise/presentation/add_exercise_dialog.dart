@@ -4,6 +4,7 @@ import 'package:mizan/features/exercise/data/exercise_repository.dart';
 import 'package:mizan/features/exercise/domain/exercise.dart';
 import 'package:mizan/features/exercise/presentation/exercise_labels.dart';
 import 'package:mizan/features/profile/presentation/profile_providers.dart';
+import 'package:mizan/features/settings/presentation/settings_providers.dart';
 
 /// Logs an exercise on [day], estimating calories from the profile's weight.
 Future<void> showAddExerciseDialog(BuildContext context, DateTime day) {
@@ -101,7 +102,7 @@ class _AddExerciseDialogState extends ConsumerState<_AddExerciseDialog> {
           Text(
             kcal == null
                 ? 'Enter a duration'
-                : 'About ${kcal.round()} kcal burned',
+                : 'About ${ref.watch(displayUnitsProvider).energy(kcal)} burned',
           ),
         ],
       ),

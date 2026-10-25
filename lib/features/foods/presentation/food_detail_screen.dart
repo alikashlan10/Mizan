@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/database/app_database.dart';
+import 'package:mizan/core/domain/display_units.dart';
 import 'package:mizan/core/domain/macro_energy.dart';
 import 'package:mizan/core/domain/nutrient_catalog.dart';
 import 'package:mizan/core/domain/nutrient_codes.dart';
@@ -19,6 +20,7 @@ import 'package:mizan/features/foods/presentation/food_form_screen.dart';
 import 'package:mizan/features/foods/presentation/food_providers.dart';
 import 'package:mizan/features/foods/presentation/meal_form_screen.dart';
 import 'package:mizan/features/foods/presentation/widgets/food_amount_field.dart';
+import 'package:mizan/features/settings/presentation/settings_providers.dart';
 
 /// A food's nutrition facts for an amount the user can change, each measured
 /// against a daily target.
@@ -100,11 +102,12 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     final grams = amount?.grams ?? 0;
     final targets = widget.targets;
     final onAddToDiary = widget.onAddToDiary;
+    final units = ref.watch(displayUnitsProvider);
     final measuredAgainst = targets.isPersonal
         ? 'Calories and macronutrients are measured against your daily '
               'targets; other nutrients against general daily values.'
         : 'Calories and macronutrients are measured against a general '
-              '${referenceDailyKcal.round()} kcal diet; fill in your profile '
+              '${units.energy(referenceDailyKcal)} diet; fill in your profile '
               'to use your own targets.';
 
     /// Amount of the nutrient with [code] in the entered quantity of food.
@@ -180,6 +183,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
             _EnergyCard(
               kcal: of(NutrientCodes.energy),
               targetKcal: targets.kcal,
+              units: units,
               proteinG: of(NutrientCodes.protein) ?? 0,
               carbsG: of(NutrientCodes.carbs) ?? 0,
               fatG: of(NutrientCodes.fat) ?? 0,
@@ -220,7 +224,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                 ),
             if (ingredients != null && ingredients.isNotEmpty) ...[
               const SizedBox(height: 12),
-              _IngredientsCard(ingredients: ingredients),
+              _IngredientsCard(ingredients: ingredients, units: units),
             ],
             const SizedBox(height: 12),
             Text(
@@ -239,6 +243,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
 class _EnergyCard extends StatelessWidget {
   const _EnergyCard({
     required this.kcal,
+    required this.units,
     required this.targetKcal,
     required this.proteinG,
     required this.carbsG,
@@ -246,6 +251,7 @@ class _EnergyCard extends StatelessWidget {
   });
 
   final double? kcal;
+  final DisplayUnits units;
   final double targetKcal;
   final double proteinG;
   final double carbsG;
@@ -277,13 +283,13 @@ class _EnergyCard extends StatelessWidget {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  kcal == null ? '—' : kcal.round().toString(),
+                  kcal == null ? '—' : units.energyNumber(kcal),
                   style: theme.textTheme.displaySmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text('kcal', style: theme.textTheme.titleMedium),
+                Text(units.energyLabel, style: theme.textTheme.titleMedium),
                 const Spacer(),
                 if (kcal != null)
                   Text('${_percent(kcal / targetKcal)} of daily', style: muted),
@@ -370,9 +376,10 @@ String _groupTitle(NutrientGroup group) => switch (group) {
 
 /// What a meal is made of.
 class _IngredientsCard extends StatelessWidget {
-  const _IngredientsCard({required this.ingredients});
+  const _IngredientsCard({required this.ingredients, required this.units});
 
   final List<MealIngredient> ingredients;
+  final DisplayUnits units;
 
   @override
   Widget build(BuildContext context) {
@@ -400,7 +407,7 @@ class _IngredientsCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text('${formatAmount(ingredient.grams)} g', style: muted),
+                  Text(units.weight(ingredient.grams), style: muted),
                 ],
               ),
             ],

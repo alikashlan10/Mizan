@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mizan/core/domain/display_units.dart';
 import 'package:mizan/core/domain/nutrient_codes.dart';
 import 'package:mizan/core/theme/app_colors.dart';
 import 'package:mizan/core/widgets/meter_row.dart';
@@ -8,6 +9,7 @@ import 'package:mizan/features/diary/domain/energy_balance.dart';
 import 'package:mizan/features/diary/presentation/diary_providers.dart';
 import 'package:mizan/features/profile/domain/macro_targets.dart';
 import 'package:mizan/features/profile/presentation/profile_providers.dart';
+import 'package:mizan/features/settings/presentation/settings_providers.dart';
 
 /// The day at a glance: what was eaten, what was burned, what is left, and
 /// progress toward the macro targets. Finer breakdowns belong to Statistics.
@@ -20,6 +22,7 @@ class DayRingsCard extends ConsumerWidget {
     final totals = ref.watch(dayTotalsProvider).value ?? const {};
     final balance = ref.watch(energyBalanceProvider);
     final macroTargets = ref.watch(macroTargetsProvider);
+    final units = ref.watch(displayUnitsProvider);
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -32,10 +35,18 @@ class DayRingsCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: _IntakeRing(totals: totals, balance: balance),
+                  child: _IntakeRing(
+                    totals: totals,
+                    balance: balance,
+                    units: units,
+                  ),
                 ),
-                Expanded(child: _ExpenditureRing(balance: balance)),
-                Expanded(child: _RemainingRing(balance: balance)),
+                Expanded(
+                  child: _ExpenditureRing(balance: balance, units: units),
+                ),
+                Expanded(
+                  child: _RemainingRing(balance: balance, units: units),
+                ),
               ],
             ),
             if (balance.estimate == null)
@@ -103,7 +114,13 @@ class _MacroBars extends StatelessWidget {
 }
 
 class _IntakeRing extends StatelessWidget {
-  const _IntakeRing({required this.totals, required this.balance});
+  const _IntakeRing({
+    required this.totals,
+    required this.balance,
+    required this.units,
+  });
+
+  final DisplayUnits units;
 
   final Map<String, double> totals;
   final EnergyBalance balance;
@@ -119,14 +136,16 @@ class _IntakeRing extends StatelessWidget {
         RingSegment(value: macros.carbsKcal, color: AppColors.chartCarbs),
         RingSegment(value: macros.fatKcal, color: AppColors.chartFat),
       ],
-      centerValue: balance.intakeKcal.round().toString(),
-      centerLabel: 'kcal',
+      centerValue: units.energyNumber(balance.intakeKcal),
+      centerLabel: units.energyLabel,
     );
   }
 }
 
 class _ExpenditureRing extends StatelessWidget {
-  const _ExpenditureRing({required this.balance});
+  const _ExpenditureRing({required this.balance, required this.units});
+
+  final DisplayUnits units;
 
   final EnergyBalance balance;
 
@@ -149,14 +168,16 @@ class _ExpenditureRing extends StatelessWidget {
           color: AppColors.chartExercise,
         ),
       ],
-      centerValue: total.round().toString(),
-      centerLabel: 'kcal',
+      centerValue: units.energyNumber(total),
+      centerLabel: units.energyLabel,
     );
   }
 }
 
 class _RemainingRing extends StatelessWidget {
-  const _RemainingRing({required this.balance});
+  const _RemainingRing({required this.balance, required this.units});
+
+  final DisplayUnits units;
 
   final EnergyBalance balance;
 
@@ -176,8 +197,8 @@ class _RemainingRing extends StatelessWidget {
               RingSegment(value: balance.intakeKcal, color: AppColors.primary),
               RingSegment(value: remaining, color: AppColors.chartTrack),
             ],
-      centerValue: remaining.abs().round().toString(),
-      centerLabel: isOver ? 'kcal over' : 'kcal left',
+      centerValue: units.energyNumber(remaining.abs()),
+      centerLabel: '${units.energyLabel} ${isOver ? 'over' : 'left'}',
     );
   }
 }
