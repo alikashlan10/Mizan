@@ -85,6 +85,48 @@ void main() {
     expect((await diary.watchDayWater(today).first).single.ml, 500);
   });
 
+  test('an entry remembers the serving it was logged with', () async {
+    final honey = await createFood('Honey', {NutrientCodes.energy: 304});
+    await diary.addEntry(
+      day: today,
+      meal: Meal.breakfast,
+      foodId: honey,
+      grams: 42,
+      servingQuantity: 2,
+      servingLabel: '1 tbsp',
+    );
+    await diary.addEntry(
+      day: today,
+      meal: Meal.lunch,
+      foodId: honey,
+      grams: 10,
+    );
+
+    final items = await diary.watchDayEntries(today).first;
+    expect(items.first.servingQuantity, 2);
+    expect(items.first.servingLabel, '1 tbsp');
+    expect(items.first.grams, 42);
+    expect(items.last.servingLabel, isNull);
+  });
+
+  test('a version 8 database keeps its entries and gains servings', () async {
+    final old = openDatabaseAtVersion(
+      8,
+      rows: [
+        "INSERT INTO foods (id, name, source) VALUES (1, 'Rice', 'custom')",
+        'INSERT INTO diary_entries (day, meal, food_id, grams) VALUES '
+            "('2026-10-11', 0, 1, 150)",
+      ],
+    );
+    addTearDown(old.close);
+
+    final item = (await DiaryRepository(
+      old,
+    ).watchDayEntries(today).first).single;
+    expect(item.grams, 150);
+    expect(item.servingLabel, isNull);
+  });
+
   test('deleting an entry removes it from the day', () async {
     final rice = await createFood('Rice', {NutrientCodes.energy: 130});
     final entry = await diary.addEntry(

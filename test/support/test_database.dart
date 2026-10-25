@@ -85,4 +85,8 @@ const _schemaSteps = <int, List<String>>{
         '(id), grams REAL NOT NULL, sort_order INTEGER NOT NULL)',
   ],
   7: ['ALTER TABLE foods ADD COLUMN category TEXT'],
+  8: [
+    'CREATE TABLE dataset_imports (source TEXT NOT NULL PRIMARY KEY, '
+        'version INTEGER NOT NULL)',
+  ],
 };

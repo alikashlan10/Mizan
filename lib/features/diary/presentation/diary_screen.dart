@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:mizan/core/domain/meal.dart';
 import 'package:mizan/core/formatting/amount_format.dart';
 import 'package:mizan/features/diary/data/diary_repository.dart';
+import 'package:mizan/features/diary/domain/diary_item.dart';
 import 'package:mizan/features/diary/presentation/add_entry_dialog.dart';
 import 'package:mizan/features/diary/presentation/add_water_sheet.dart';
 import 'package:mizan/features/diary/presentation/diary_providers.dart';
@@ -111,7 +112,7 @@ class _MealSection extends ConsumerWidget {
           DiaryEntryTile(
             entryKey: item.entryId,
             title: item.foodName,
-            subtitle: '${formatAmount(item.grams)} g',
+            subtitle: _amountLabel(item),
             trailing: item.kcal == null ? '—' : '${item.kcal!.round()} kcal',
             onDelete: () =>
                 ref.read(diaryRepositoryProvider).deleteEntry(item.entryId),
@@ -174,4 +175,17 @@ class _ExerciseSection extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// How much was logged: the serving as entered, with its weight, or just the
+/// weight. For example "2 × 1 tbsp · 42.0 g" or "150 g".
+String _amountLabel(DiaryItem item) {
+  final grams = '${formatAmount(item.grams)} g';
+  final label = item.servingLabel;
+  final quantity = item.servingQuantity;
+  if (label == null || quantity == null) return grams;
+  final count = quantity == quantity.roundToDouble()
+      ? quantity.toInt().toString()
+      : formatAmount(quantity);
+  return quantity == 1 ? '$label · $grams' : '$count × $label · $grams';
 }

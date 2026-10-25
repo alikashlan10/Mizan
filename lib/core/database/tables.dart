@@ -119,6 +119,11 @@ class DiaryEntries extends Table {
   IntColumn get meal => intEnum<Meal>()();
   IntColumn get foodId => integer().references(Foods, #id)();
   RealColumn get grams => real()();
+
+  /// How the amount was entered when it was a serving, such as 2 of
+  /// "1 tbsp"; both null when it was entered in grams.
+  RealColumn get servingQuantity => real().nullable()();
+  TextColumn get servingLabel => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 

@@ -38,7 +38,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -65,6 +65,10 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(exerciseEntries);
       }
       if (from < 8) await m.createTable(datasetImports);
+      if (from < 9) {
+        await m.addColumn(diaryEntries, diaryEntries.servingQuantity);
+        await m.addColumn(diaryEntries, diaryEntries.servingLabel);
+      }
     },
     beforeOpen: (_) async {
       await customStatement('PRAGMA foreign_keys = ON');

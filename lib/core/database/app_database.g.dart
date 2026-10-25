@@ -1132,6 +1132,28 @@ class $DiaryEntriesTable extends DiaryEntries
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _servingQuantityMeta = const VerificationMeta(
+    'servingQuantity',
+  );
+  @override
+  late final GeneratedColumn<double> servingQuantity = GeneratedColumn<double>(
+    'serving_quantity',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _servingLabelMeta = const VerificationMeta(
+    'servingLabel',
+  );
+  @override
+  late final GeneratedColumn<String> servingLabel = GeneratedColumn<String>(
+    'serving_label',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1151,6 +1173,8 @@ class $DiaryEntriesTable extends DiaryEntries
     meal,
     foodId,
     grams,
+    servingQuantity,
+    servingLabel,
     createdAt,
   ];
   @override
@@ -1192,6 +1216,24 @@ class $DiaryEntriesTable extends DiaryEntries
     } else if (isInserting) {
       context.missing(_gramsMeta);
     }
+    if (data.containsKey('serving_quantity')) {
+      context.handle(
+        _servingQuantityMeta,
+        servingQuantity.isAcceptableOrUnknown(
+          data['serving_quantity']!,
+          _servingQuantityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('serving_label')) {
+      context.handle(
+        _servingLabelMeta,
+        servingLabel.isAcceptableOrUnknown(
+          data['serving_label']!,
+          _servingLabelMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1229,6 +1271,14 @@ class $DiaryEntriesTable extends DiaryEntries
         DriftSqlType.double,
         data['${effectivePrefix}grams'],
       )!,
+      servingQuantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}serving_quantity'],
+      ),
+      servingLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}serving_label'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1253,6 +1303,11 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
   final Meal meal;
   final int foodId;
   final double grams;
+
+  /// How the amount was entered when it was a serving, such as 2 of
+  /// "1 tbsp"; both null when it was entered in grams.
+  final double? servingQuantity;
+  final String? servingLabel;
   final DateTime createdAt;
   const DiaryEntry({
     required this.id,
@@ -1260,6 +1315,8 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
     required this.meal,
     required this.foodId,
     required this.grams,
+    this.servingQuantity,
+    this.servingLabel,
     required this.createdAt,
   });
   @override
@@ -1274,6 +1331,12 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
     }
     map['food_id'] = Variable<int>(foodId);
     map['grams'] = Variable<double>(grams);
+    if (!nullToAbsent || servingQuantity != null) {
+      map['serving_quantity'] = Variable<double>(servingQuantity);
+    }
+    if (!nullToAbsent || servingLabel != null) {
+      map['serving_label'] = Variable<String>(servingLabel);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -1285,6 +1348,12 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
       meal: Value(meal),
       foodId: Value(foodId),
       grams: Value(grams),
+      servingQuantity: servingQuantity == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servingQuantity),
+      servingLabel: servingLabel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servingLabel),
       createdAt: Value(createdAt),
     );
   }
@@ -1302,6 +1371,8 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
       ),
       foodId: serializer.fromJson<int>(json['foodId']),
       grams: serializer.fromJson<double>(json['grams']),
+      servingQuantity: serializer.fromJson<double?>(json['servingQuantity']),
+      servingLabel: serializer.fromJson<String?>(json['servingLabel']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -1316,6 +1387,8 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
       ),
       'foodId': serializer.toJson<int>(foodId),
       'grams': serializer.toJson<double>(grams),
+      'servingQuantity': serializer.toJson<double?>(servingQuantity),
+      'servingLabel': serializer.toJson<String?>(servingLabel),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -1326,6 +1399,8 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
     Meal? meal,
     int? foodId,
     double? grams,
+    Value<double?> servingQuantity = const Value.absent(),
+    Value<String?> servingLabel = const Value.absent(),
     DateTime? createdAt,
   }) => DiaryEntry(
     id: id ?? this.id,
@@ -1333,6 +1408,10 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
     meal: meal ?? this.meal,
     foodId: foodId ?? this.foodId,
     grams: grams ?? this.grams,
+    servingQuantity: servingQuantity.present
+        ? servingQuantity.value
+        : this.servingQuantity,
+    servingLabel: servingLabel.present ? servingLabel.value : this.servingLabel,
     createdAt: createdAt ?? this.createdAt,
   );
   DiaryEntry copyWithCompanion(DiaryEntriesCompanion data) {
@@ -1342,6 +1421,12 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
       meal: data.meal.present ? data.meal.value : this.meal,
       foodId: data.foodId.present ? data.foodId.value : this.foodId,
       grams: data.grams.present ? data.grams.value : this.grams,
+      servingQuantity: data.servingQuantity.present
+          ? data.servingQuantity.value
+          : this.servingQuantity,
+      servingLabel: data.servingLabel.present
+          ? data.servingLabel.value
+          : this.servingLabel,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1354,13 +1439,24 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
           ..write('meal: $meal, ')
           ..write('foodId: $foodId, ')
           ..write('grams: $grams, ')
+          ..write('servingQuantity: $servingQuantity, ')
+          ..write('servingLabel: $servingLabel, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, day, meal, foodId, grams, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    day,
+    meal,
+    foodId,
+    grams,
+    servingQuantity,
+    servingLabel,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1370,6 +1466,8 @@ class DiaryEntry extends DataClass implements Insertable<DiaryEntry> {
           other.meal == this.meal &&
           other.foodId == this.foodId &&
           other.grams == this.grams &&
+          other.servingQuantity == this.servingQuantity &&
+          other.servingLabel == this.servingLabel &&
           other.createdAt == this.createdAt);
 }
 
@@ -1379,6 +1477,8 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
   final Value<Meal> meal;
   final Value<int> foodId;
   final Value<double> grams;
+  final Value<double?> servingQuantity;
+  final Value<String?> servingLabel;
   final Value<DateTime> createdAt;
   const DiaryEntriesCompanion({
     this.id = const Value.absent(),
@@ -1386,6 +1486,8 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
     this.meal = const Value.absent(),
     this.foodId = const Value.absent(),
     this.grams = const Value.absent(),
+    this.servingQuantity = const Value.absent(),
+    this.servingLabel = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   DiaryEntriesCompanion.insert({
@@ -1394,6 +1496,8 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
     required Meal meal,
     required int foodId,
     required double grams,
+    this.servingQuantity = const Value.absent(),
+    this.servingLabel = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : day = Value(day),
        meal = Value(meal),
@@ -1405,6 +1509,8 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
     Expression<int>? meal,
     Expression<int>? foodId,
     Expression<double>? grams,
+    Expression<double>? servingQuantity,
+    Expression<String>? servingLabel,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -1413,6 +1519,8 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
       if (meal != null) 'meal': meal,
       if (foodId != null) 'food_id': foodId,
       if (grams != null) 'grams': grams,
+      if (servingQuantity != null) 'serving_quantity': servingQuantity,
+      if (servingLabel != null) 'serving_label': servingLabel,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -1423,6 +1531,8 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
     Value<Meal>? meal,
     Value<int>? foodId,
     Value<double>? grams,
+    Value<double?>? servingQuantity,
+    Value<String?>? servingLabel,
     Value<DateTime>? createdAt,
   }) {
     return DiaryEntriesCompanion(
@@ -1431,6 +1541,8 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
       meal: meal ?? this.meal,
       foodId: foodId ?? this.foodId,
       grams: grams ?? this.grams,
+      servingQuantity: servingQuantity ?? this.servingQuantity,
+      servingLabel: servingLabel ?? this.servingLabel,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -1455,6 +1567,12 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
     if (grams.present) {
       map['grams'] = Variable<double>(grams.value);
     }
+    if (servingQuantity.present) {
+      map['serving_quantity'] = Variable<double>(servingQuantity.value);
+    }
+    if (servingLabel.present) {
+      map['serving_label'] = Variable<String>(servingLabel.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1469,6 +1587,8 @@ class DiaryEntriesCompanion extends UpdateCompanion<DiaryEntry> {
           ..write('meal: $meal, ')
           ..write('foodId: $foodId, ')
           ..write('grams: $grams, ')
+          ..write('servingQuantity: $servingQuantity, ')
+          ..write('servingLabel: $servingLabel, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -5046,6 +5166,8 @@ typedef $$DiaryEntriesTableCreateCompanionBuilder =
       required Meal meal,
       required int foodId,
       required double grams,
+      Value<double?> servingQuantity,
+      Value<String?> servingLabel,
       Value<DateTime> createdAt,
     });
 typedef $$DiaryEntriesTableUpdateCompanionBuilder =
@@ -5055,6 +5177,8 @@ typedef $$DiaryEntriesTableUpdateCompanionBuilder =
       Value<Meal> meal,
       Value<int> foodId,
       Value<double> grams,
+      Value<double?> servingQuantity,
+      Value<String?> servingLabel,
       Value<DateTime> createdAt,
     });
 
@@ -5107,6 +5231,16 @@ class $$DiaryEntriesTableFilterComposer
 
   ColumnFilters<double> get grams => $composableBuilder(
     column: $table.grams,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get servingQuantity => $composableBuilder(
+    column: $table.servingQuantity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get servingLabel => $composableBuilder(
+    column: $table.servingLabel,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5168,6 +5302,16 @@ class $$DiaryEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get servingQuantity => $composableBuilder(
+    column: $table.servingQuantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get servingLabel => $composableBuilder(
+    column: $table.servingLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -5217,6 +5361,16 @@ class $$DiaryEntriesTableAnnotationComposer
 
   GeneratedColumn<double> get grams =>
       $composableBuilder(column: $table.grams, builder: (column) => column);
+
+  GeneratedColumn<double> get servingQuantity => $composableBuilder(
+    column: $table.servingQuantity,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get servingLabel => $composableBuilder(
+    column: $table.servingLabel,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -5278,6 +5432,8 @@ class $$DiaryEntriesTableTableManager
                 Value<Meal> meal = const Value.absent(),
                 Value<int> foodId = const Value.absent(),
                 Value<double> grams = const Value.absent(),
+                Value<double?> servingQuantity = const Value.absent(),
+                Value<String?> servingLabel = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => DiaryEntriesCompanion(
                 id: id,
@@ -5285,6 +5441,8 @@ class $$DiaryEntriesTableTableManager
                 meal: meal,
                 foodId: foodId,
                 grams: grams,
+                servingQuantity: servingQuantity,
+                servingLabel: servingLabel,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -5294,6 +5452,8 @@ class $$DiaryEntriesTableTableManager
                 required Meal meal,
                 required int foodId,
                 required double grams,
+                Value<double?> servingQuantity = const Value.absent(),
+                Value<String?> servingLabel = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => DiaryEntriesCompanion.insert(
                 id: id,
@@ -5301,6 +5461,8 @@ class $$DiaryEntriesTableTableManager
                 meal: meal,
                 foodId: foodId,
                 grams: grams,
+                servingQuantity: servingQuantity,
+                servingLabel: servingLabel,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0

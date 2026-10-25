@@ -8,6 +8,8 @@ class DiaryItem {
     required this.foodName,
     required this.grams,
     required this.kcal,
+    this.servingQuantity,
+    this.servingLabel,
   });
 
   final int entryId;
@@ -17,4 +19,8 @@ class DiaryItem {
 
   /// Null when the food has no energy value recorded.
   final double? kcal;
+
+  /// Set when the amount was entered as servings, such as 2 of "1 tbsp".
+  final double? servingQuantity;
+  final String? servingLabel;
 }

@@ -52,6 +52,8 @@ class _AddEntryDialogState extends ConsumerState<_AddEntryDialog> {
           meal: _meal,
           foodId: widget.food.id,
           grams: amount.grams,
+          servingQuantity: amount.serving == null ? null : amount.quantity,
+          servingLabel: amount.serving?.label,
         );
     if (mounted) Navigator.of(context).pop(true);
   }

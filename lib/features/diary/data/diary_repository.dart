@@ -17,11 +17,16 @@ class DiaryRepository {
 
   final AppDatabase _db;
 
+  /// Logs [grams] of a food. When the amount was entered as servings, pass
+  /// [servingQuantity] and [servingLabel] too so the diary can show it that
+  /// way, such as "2 × 1 tbsp".
   Future<int> addEntry({
     required DateTime day,
     required Meal meal,
     required int foodId,
     required double grams,
+    double? servingQuantity,
+    String? servingLabel,
   }) => _db
       .into(_db.diaryEntries)
       .insert(
@@ -30,6 +35,8 @@ class DiaryRepository {
           meal: meal,
           foodId: foodId,
           grams: grams,
+          servingQuantity: Value(servingQuantity),
+          servingLabel: Value(servingLabel),
         ),
       );
 
@@ -39,7 +46,8 @@ class DiaryRepository {
   Stream<List<DiaryItem>> watchDayEntries(DateTime day) {
     return _db
         .customSelect(
-          'SELECT e.id, e.meal, e.grams, f.name, '
+          'SELECT e.id, e.meal, e.grams, e.serving_quantity, e.serving_label, '
+          'f.name, '
           '(SELECT fn.amount * e.grams / 100.0 FROM food_nutrients fn '
           'JOIN nutrients n ON n.id = fn.nutrient_id '
           'WHERE fn.food_id = e.food_id AND n.code = ?) AS kcal '
@@ -66,6 +74,8 @@ class DiaryRepository {
                 foodName: r.read<String>('name'),
                 grams: r.read<double>('grams'),
                 kcal: r.readNullable<double>('kcal'),
+                servingQuantity: r.readNullable<double>('serving_quantity'),
+                servingLabel: r.readNullable<String>('serving_label'),
               ),
           ],
         );
