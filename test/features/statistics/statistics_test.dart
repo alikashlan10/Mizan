@@ -200,12 +200,22 @@ void main() {
     for (final tab in ['Overview', 'Macros', 'Nutrients']) {
       expect(find.text(tab), findsOneWidget);
     }
-    final today = tester.widget<ChoiceChip>(
-      find.widgetWithText(ChoiceChip, 'Today'),
-    );
-    expect(today.selected, isTrue);
+    expect(find.widgetWithText(ListTile, 'Today'), findsOneWidget);
     expect(find.text('No food logged in this range yet.'), findsOneWidget);
     expect(find.textContaining('0 of 1 day logged'), findsOneWidget);
+
+    // The range is chosen from a list.
+    await tester.tap(find.text('Today'));
+    await tester.pumpAndSettle();
+    expect(find.text('Last 30 days'), findsOneWidget);
+    await tester.tap(find.text('Last 7 days'));
+    await tester.pumpAndSettle();
+    for (var i = 0; i < 3; i++) {
+      await tester.runAsync(() => Future<void>.delayed(Durations.short2));
+      await tester.pump();
+    }
+    expect(find.text('Last 7 days'), findsOneWidget);
+    expect(find.textContaining('0 of 7 days logged'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
     await tester.runAsync(db.close);

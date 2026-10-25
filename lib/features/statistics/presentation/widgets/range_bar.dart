@@ -4,10 +4,39 @@ import 'package:intl/intl.dart';
 import 'package:mizan/features/statistics/domain/stats_range.dart';
 import 'package:mizan/features/statistics/presentation/statistics_providers.dart';
 
-/// Chooses the range of days the statistics cover, and says how many of them
-/// have food logged.
+/// Shows the range the statistics cover and how many of its days have food
+/// logged; tapping it opens the list of ranges to choose from.
 class RangeBar extends ConsumerWidget {
   const RangeBar({super.key});
+
+  Future<void> _choose(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(statsRangeProvider).preset;
+    final preset = await showModalBottomSheet<StatsPreset>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final p in StatsPreset.values)
+              ListTile(
+                title: Text(_presetLabel(p)),
+                selected: p == current,
+                trailing: p == current ? const Icon(Icons.check) : null,
+                // Choosing custom again reopens the calendar.
+                onTap: () => Navigator.of(context).pop(p),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (preset == null || !context.mounted) return;
+    if (preset == StatsPreset.custom) {
+      await _pickCustom(context, ref);
+    } else {
+      ref.read(statsRangeProvider.notifier).selectPreset(preset);
+    }
+  }
 
   Future<void> _pickCustom(BuildContext context, WidgetRef ref) async {
     final range = ref.read(statsRangeProvider);
@@ -35,41 +64,22 @@ class RangeBar extends ConsumerWidget {
         : '${dates.format(range.start)} – ${dates.format(range.end)}';
     final count = range.days.length;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              for (final preset in StatsPreset.values)
-                ChoiceChip(
-                  label: Text(_presetLabel(preset)),
-                  // Compact so all four fit on one line on a phone.
-                  showCheckmark: false,
-                  visualDensity: VisualDensity.compact,
-                  selected: range.preset == preset,
-                  onSelected: (_) => preset == StatsPreset.custom
-                      ? _pickCustom(context, ref)
-                      : ref
-                            .read(statsRangeProvider.notifier)
-                            .selectPreset(preset),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            logged == null
-                ? span
-                : '$span · $logged of $count '
-                      '${count == 1 ? 'day' : 'days'} logged',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        onTap: () => _choose(context, ref),
+        leading: const Icon(Icons.date_range),
+        title: Text(_presetLabel(range.preset)),
+        subtitle: Text(
+          logged == null
+              ? span
+              : '$span · $logged of $count '
+                    '${count == 1 ? 'day' : 'days'} logged',
+        ),
+        subtitleTextStyle: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+        trailing: const Icon(Icons.expand_more),
       ),
     );
   }
@@ -77,7 +87,7 @@ class RangeBar extends ConsumerWidget {
 
 String _presetLabel(StatsPreset preset) => switch (preset) {
   StatsPreset.today => 'Today',
-  StatsPreset.lastWeek => '7 days',
-  StatsPreset.lastMonth => '30 days',
-  StatsPreset.custom => 'Custom',
+  StatsPreset.lastWeek => 'Last 7 days',
+  StatsPreset.lastMonth => 'Last 30 days',
+  StatsPreset.custom => 'Custom range',
 };
