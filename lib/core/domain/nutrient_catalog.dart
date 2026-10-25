@@ -24,6 +24,7 @@ class NutrientDefinition {
     this.group,
     this.fdcIds, {
     this.dailyValue,
+    this.isLimit = false,
   });
 
   /// Stable identifier, stored in the database.
@@ -42,6 +43,10 @@ class NutrientDefinition {
   /// [unit]; null where there is none. Energy and the macros are measured
   /// against the user's own targets instead.
   final double? dailyValue;
+
+  /// Whether [dailyValue] is a ceiling to stay under rather than an amount
+  /// to reach, as for sodium.
+  final bool isLimit;
 }
 
 const nutrientCatalog = <NutrientDefinition>[
@@ -97,6 +102,7 @@ const nutrientCatalog = <NutrientDefinition>[
     NutrientGroup.lipids,
     [1258],
     dailyValue: 20,
+    isLimit: true,
   ),
   NutrientDefinition(
     'monounsaturated_fat',
@@ -115,9 +121,15 @@ const nutrientCatalog = <NutrientDefinition>[
   NutrientDefinition('trans_fat', 'Trans fat', 'g', NutrientGroup.lipids, [
     1257,
   ]),
-  NutrientDefinition('cholesterol', 'Cholesterol', 'mg', NutrientGroup.lipids, [
-    1253,
-  ], dailyValue: 300),
+  NutrientDefinition(
+    'cholesterol',
+    'Cholesterol',
+    'mg',
+    NutrientGroup.lipids,
+    [1253],
+    dailyValue: 300,
+    isLimit: true,
+  ),
   NutrientDefinition('omega3_ala', 'Omega-3 ALA', 'g', NutrientGroup.lipids, [
     1404,
     1270,
@@ -294,6 +306,7 @@ const nutrientCatalog = <NutrientDefinition>[
     NutrientGroup.minerals,
     [1093],
     dailyValue: 2300,
+    isLimit: true,
   ),
   NutrientDefinition('zinc', 'Zinc', 'mg', NutrientGroup.minerals, [
     1095,

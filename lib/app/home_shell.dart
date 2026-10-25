@@ -6,6 +6,7 @@ import 'package:mizan/features/diary/presentation/diary_screen.dart';
 import 'package:mizan/features/foods/presentation/food_providers.dart';
 import 'package:mizan/features/foods/presentation/food_search_screen.dart';
 import 'package:mizan/features/profile/presentation/profile_screen.dart';
+import 'package:mizan/features/statistics/presentation/statistics_screen.dart';
 
 /// Root of the app: the bottom navigation bar and its tabs.
 ///
@@ -44,7 +45,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
               MaterialPageRoute(builder: (_) => FoodDetailPage(food: food)),
             ),
           ),
-          const _ComingSoon(title: 'Statistics'),
+          const StatisticsScreen(),
           const ProfileScreen(),
         ],
       ),
@@ -74,20 +75,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ComingSoon extends StatelessWidget {
-  const _ComingSoon({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: const Center(child: Text('Coming soon')),
     );
   }
 }
