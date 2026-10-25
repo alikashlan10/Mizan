@@ -44,7 +44,6 @@ it in navigation and in the data model.
 ### Later
 
 - Barcode scanning and branded foods (Open Food Facts).
-- Backup: export and import to a file.
 - Biometrics (weight history and similar).
 
 ## Decisions
@@ -84,6 +83,7 @@ it in navigation and in the data model.
 | 2026-10-25 | Statistics averages and totals count only days with food logged; unlogged days show as gaps in the charts. Calories burned per day are the profile's maintenance calories plus that day's exercise, and surplus or deficit is eaten minus burned. | An unlogged day is missing data, not a day of eating nothing. Limitation: burned calories use the current profile for every past day, since profile history is not kept. |
 | 2026-10-25 | A diary entry remembers the serving it was logged with (schema version 9 adds `serving_quantity` and `serving_label`) and shows it, such as "2 × 1 tbsp · 42.0 g". Grams stay the stored amount that all totals use. | Logged servings should read the way they were entered. |
 | 2026-10-25 | Display options live on a Display screen opened from Personal settings: energy in kcal or kJ, food weight in grams or ounces, water in ml or fl oz, and whether foods open at 100 g or their first serving. They are stored as key and value rows (schema version 10 adds `app_settings`) and change only what is shown and typed; the database keeps kcal, grams and ml. Body measurements stay metric. | Conversion at the edges keeps every total, chart and stored value in one unit. |
+| 2026-10-25 | Backup is one JSON file (format 1) saved and opened through `file_picker`, from a Backup screen opened from Personal settings. It holds settings, the profile, custom foods and meals (nutrients by code, servings, ingredients), and the diary, water and exercise entries. Bundled foods are referred to by dataset and dataset id, never copied. Restoring replaces all of that in one transaction; entries for bundled foods this install lacks are left out and counted. | Ids differ between installs, but dataset ids do not, so a backup works on a fresh install and stays small. |
 | 2026-10-14 | In the Foods tab, tapping a food opens its nutrition facts (with an adjustable amount and an Add to diary button). From a Diary section's plus button, tapping a food goes straight to the amount dialog. | Browsing wants detail; logging wants speed. |
 | 2026-10-14 | Foods have serving sizes ("1 cup", "1 large") alongside grams, chosen from a unit dropdown wherever an amount is entered. USDA's 14,449 servings are bundled as `assets/data/usda_sr_servings.tsv` and imported separately from the foods. Diary entries still store grams only. | Logging "1 egg" is more practical than weighing; a separate import lets databases seeded earlier gain servings. |
 | 2026-10-14 | The nutrition facts screen shows a calorie headline, a stacked bar of calories by macro, and a bar per nutrient filled toward a daily amount: the user's own calorie and macro targets when a profile exists, otherwise a general 2,000 kcal diet. Fiber, saturated fat and sodium use general daily values (28 g, 20 g, 2,300 mg); sugars have none. | Bars make a food's contribution to the day readable at a glance. |
@@ -211,7 +211,7 @@ As of 2026-10-25, in the dark blue theme with schema version 10:
 | Foods | Done: search with source tabs (All, USDA, Foundation, FNDDS, Custom, Meals), nutrition facts with daily-target bars, serving sizes. |
 | Customization | Done: custom foods with servings, meals built from foods, edit and delete. |
 | Comparison | Done: two to four foods by weight or by one nutrient. |
-| Personal settings | Done: calorie calculator, macro targets and display options (kcal/kJ, g/oz, ml/fl oz, starting amount). Body measurements are metric only. |
+| Personal settings | Done: calorie calculator, macro targets and display options (kcal/kJ, g/oz, ml/fl oz, starting amount). Backup to and restore from a file. Body measurements are metric only. |
 | Statistics | Done: Overview, Macros and Nutrients tabs over any date range. |
 
 Sixty nutrients are tracked; see `lib/core/domain/nutrient_catalog.dart`.

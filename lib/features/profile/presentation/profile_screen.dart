@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mizan/core/domain/display_units.dart';
+import 'package:mizan/features/backup/presentation/backup_screen.dart';
 import 'package:mizan/features/profile/data/profile_repository.dart';
 import 'package:mizan/features/profile/domain/calorie_calculator.dart';
 import 'package:mizan/features/profile/domain/macro_targets.dart';
@@ -21,6 +22,13 @@ class ProfileScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Profile'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_backup_restore),
+            tooltip: 'Backup',
+            onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(builder: (_) => const BackupScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.tune),
             tooltip: 'Display settings',
